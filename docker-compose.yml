@@ -46,7 +46,7 @@ services:
 
   sba-backend:
     build:
-      context: ./SBA301_SU26_GroupProject
+      context: Backend
       dockerfile: Dockerfile
     image: hohuy1405/sba-backend:latest
     container_name: sba-backend
