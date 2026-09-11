@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Outlet, Navigate, useLocation } from 'react-router-dom'
 import SiteHeader from '../components/shared/site/site-header'
 import SiteFooter from '../components/shared/site/site-footer'
+import SmartAppBanner from '../components/shared/site/SmartAppBanner'
 import SmoothScroll from '../components/shared/SmoothScroll'
 import { useAuth } from '@/lib/auth'
 
@@ -59,6 +60,7 @@ export default function SiteLayout({ requireAuth = false }: SiteLayoutProps) {
                 sm:[--content-padding-x:1.5rem] 
                 lg:[--content-padding-x:2rem]"
 			>
+				<SmartAppBanner />
 				<SiteHeader />
 
 				<main className="pt-20 pb-8 md:pb-12 lg:pb-16">

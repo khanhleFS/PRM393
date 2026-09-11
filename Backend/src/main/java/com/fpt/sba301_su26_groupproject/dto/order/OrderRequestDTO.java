@@ -16,5 +16,15 @@ public record OrderRequestDTO(
     String requestType,
 
     @Schema(example = "1", defaultValue = "1", description = "Số lượng gói coin cần mua (mặc định là 1)")
-    Integer quantity
-) {}
+    Integer quantity,
+
+    @Schema(example = "WEB", defaultValue = "WEB", description = "Nền tảng tạo đơn hàng: WEB | MOBILE")
+    String platform,
+
+    @Schema(example = "novelapp://payment/callback", description = "URL chuyển hướng sau khi thanh toán xong trên Mobile (tuỳ chọn)")
+    String redirectUrl
+) {
+    public OrderRequestDTO(UUID coinPackageId, String orderInfo, String requestType, Integer quantity) {
+        this(coinPackageId, orderInfo, requestType, quantity, "WEB", null);
+    }
+}

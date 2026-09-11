@@ -5,6 +5,10 @@ import io.swagger.v3.oas.annotations.media.Schema;
 public record PaymentMomoCreateResponseDTO(
         @Schema(example = "https://test-payment.momo.vn/v2/gateway/api/pay?...")
         String payUrl,
+        @Schema(example = "momo://app?action=payWithApp&...")
+        String deeplink,
+        @Schema(example = "https://test-payment.momo.vn/v2/gateway/api/qr?...")
+        String qrCodeUrl,
         @Schema(example = "ORDER001")
         String orderId
 ) {}

@@ -1,8 +1,12 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BookOpen } from 'lucide-react'
 import Container from './container'
+import DownloadAppModal from './DownloadAppModal'
 
 export default function SiteFooter() {
+  const [isDownloadOpen, setIsDownloadOpen] = useState(false)
+
   return (
     <footer className="bg-background dark:bg-background pt-24 pb-12 transition-colors duration-500 border-t border-black/5 dark:border-white/5">
       <Container>
@@ -40,6 +44,7 @@ export default function SiteFooter() {
                 { label: 'Thể loại', to: '/discover' },
                 { label: 'Mới nhất', to: '/latest' },
                 { label: 'Bảng xếp hạng', to: '/ranking' },
+                { label: '📱 Tải App Mobile', onClick: () => setIsDownloadOpen(true) },
               ]}
             />
             <FooterColumn
@@ -90,20 +95,38 @@ export default function SiteFooter() {
           </div>
         </div>
       </Container>
+
+      <DownloadAppModal isOpen={isDownloadOpen} onClose={() => setIsDownloadOpen(false)} />
     </footer>
   )
 }
 
-function FooterColumn({ title, links }: { title: string; links: { label: string; to: string }[] }) {
+function FooterColumn({
+  title,
+  links
+}: {
+  title: string
+  links: { label: string; to?: string; onClick?: () => void }[]
+}) {
   return (
     <div className="space-y-6">
       <h4 className="text-[11px] font-bold uppercase tracking-[0.2em] text-foreground/40">{title}</h4>
       <ul className="space-y-4">
         {links.map((link) => (
           <li key={link.label}>
-            <Link to={link.to} className="text-[14px] font-medium text-muted-foreground hover:text-primary transition-colors">
-              {link.label}
-            </Link>
+            {link.to ? (
+              <Link to={link.to} className="text-[14px] font-medium text-muted-foreground hover:text-primary transition-colors">
+                {link.label}
+              </Link>
+            ) : (
+              <button
+                type="button"
+                onClick={link.onClick}
+                className="text-[14px] font-medium text-muted-foreground hover:text-primary transition-colors text-left cursor-pointer"
+              >
+                {link.label}
+              </button>
+            )}
           </li>
         ))}
       </ul>

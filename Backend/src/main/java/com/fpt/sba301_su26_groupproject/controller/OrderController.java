@@ -108,8 +108,10 @@ public class OrderController {
     @PostMapping("/{orderId}/payment")
     public ResponseEntity<ApiResponse<OrderResponseDTO>> recreatePayment(
             @PathVariable UUID orderId,
-            @RequestParam(required = false, defaultValue = "captureWallet") String requestType) {
-        OrderResponseDTO result = orderService.recreatePayment(orderId, requestType);
+            @RequestParam(required = false, defaultValue = "captureWallet") String requestType,
+            @RequestParam(required = false, defaultValue = "WEB") String platform,
+            @RequestParam(required = false) String redirectUrl) {
+        OrderResponseDTO result = orderService.recreatePayment(orderId, requestType, platform, redirectUrl);
         return ResponseEntity.ok(ApiResponse.<OrderResponseDTO>builder()
                 .code(200)
                 .message("Tạo link thanh toán MoMo thành công")

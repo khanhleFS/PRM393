@@ -78,18 +78,20 @@ public class OrderServiceImpl implements OrderService {
                         saved.getId().toString(),
                         saved.getAmountVnd(),
                         orderInfo,
-                        requestType
+                        requestType,
+                        request.platform(),
+                        request.redirectUrl()
                 )
         );
 
-        return mapToResponse(saved, momoRes.payUrl());
+        return mapToResponse(saved, momoRes.payUrl(), momoRes.deeplink(), momoRes.qrCodeUrl());
     }
 
     @Override
     public OrderResponseDTO getOrderById(UUID id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ApiException(CommonErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy đơn hàng"));
-        return mapToResponse(order, null);
+        return mapToResponse(order, null, null, null);
     }
 
     @Override
@@ -98,7 +100,7 @@ public class OrderServiceImpl implements OrderService {
                 .orElseThrow(() -> new ApiException(CommonErrorCode.UNAUTHORIZED, "Người dùng không tồn tại"));
 
         return orderRepository.findByUserId(user.getId()).stream()
-                .map(order -> mapToResponse(order, null))
+                .map(order -> mapToResponse(order, null, null, null))
                 .collect(Collectors.toList());
     }
 
@@ -122,6 +124,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public OrderResponseDTO recreatePayment(UUID orderId, String requestType) {
+        return recreatePayment(orderId, requestType, "WEB", null);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponseDTO recreatePayment(UUID orderId, String requestType, String platform, String redirectUrl) {
         Order order = orderRepository.findById(orderId)
                 .orElseThrow(() -> new ApiException(CommonErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy đơn hàng"));
 
@@ -137,14 +145,16 @@ public class OrderServiceImpl implements OrderService {
                         order.getId().toString(),
                         order.getAmountVnd(),
                         orderInfo,
-                        type
+                        type,
+                        platform,
+                        redirectUrl
                 )
         );
 
-        return mapToResponse(order, momoRes.payUrl());
+        return mapToResponse(order, momoRes.payUrl(), momoRes.deeplink(), momoRes.qrCodeUrl());
     }
 
-    private OrderResponseDTO mapToResponse(Order order, String payUrl) {
+    private OrderResponseDTO mapToResponse(Order order, String payUrl, String deeplink, String qrCodeUrl) {
         return OrderResponseDTO.builder()
                 .id(order.getId())
                 .userId(order.getUser().getId())
@@ -157,6 +167,8 @@ public class OrderServiceImpl implements OrderService {
                 .status(order.getStatus())
                 .createdAt(order.getCreatedAt())
                 .payUrl(payUrl)
+                .deeplink(deeplink)
+                .qrCodeUrl(qrCodeUrl)
                 .build();
     }
 }

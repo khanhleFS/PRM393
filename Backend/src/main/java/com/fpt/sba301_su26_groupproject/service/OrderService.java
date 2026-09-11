@@ -17,4 +17,5 @@ public interface OrderService {
     void syncPaymentStatus(UUID orderId);
     List<EnumResponseDTO> getPaymentEnums();
     OrderResponseDTO recreatePayment(UUID orderId, String requestType);
+    OrderResponseDTO recreatePayment(UUID orderId, String requestType, String platform, String redirectUrl);
 }

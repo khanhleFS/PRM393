@@ -89,8 +89,19 @@ public class PaymentServiceImpl implements PaymentService {
         log.info("[Payment] Persisted PENDING payment: transactionRef={}, orderId={}", requestId, request.orderId());
 
         String requestType = request.requestType() != null ? request.requestType() : "captureWallet";
+
+        String redirectUrl = momoConfig.getRedirectUrl();
+        if (request.redirectUrl() != null && !request.redirectUrl().isBlank()) {
+            redirectUrl = request.redirectUrl();
+        } else if ("MOBILE".equalsIgnoreCase(request.platform())) {
+            String mobileRedirect = momoConfig.getMobileRedirectUrl();
+            if (mobileRedirect != null && !mobileRedirect.isBlank()) {
+                redirectUrl = mobileRedirect;
+            }
+        }
+
         String signature = MomoCryptoUtil.hmacSHA256(buildCreateSignatureRaw(
-                requestId, requestId, request.amount(), orderInfo, requestType), momoConfig.getSecretKey());
+                requestId, requestId, request.amount(), orderInfo, requestType, redirectUrl), momoConfig.getSecretKey());
 
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("partnerCode", momoConfig.getPartnerCode());
@@ -99,7 +110,7 @@ public class PaymentServiceImpl implements PaymentService {
         payload.put("amount", String.valueOf(request.amount()));
         payload.put("orderId", requestId);
         payload.put("orderInfo", orderInfo);
-        payload.put("redirectUrl", momoConfig.getRedirectUrl());
+        payload.put("redirectUrl", redirectUrl);
         payload.put("ipnUrl", momoConfig.getIpnUrl());
         payload.put("extraData", "");
         payload.put("requestType", requestType);
@@ -118,7 +129,17 @@ public class PaymentServiceImpl implements PaymentService {
             throw new ApiException(CommonErrorCode.EXTERNAL_SERVICE_ERROR, "MoMo response did not contain payUrl");
         }
 
-        return new PaymentMomoCreateResponseDTO(payUrl, request.orderId());
+        String deeplink = response.get("deeplink") != null ? String.valueOf(response.get("deeplink")) : null;
+        if ("null".equalsIgnoreCase(deeplink) || (deeplink != null && deeplink.isBlank())) {
+            deeplink = null;
+        }
+
+        String qrCodeUrl = response.get("qrCodeUrl") != null ? String.valueOf(response.get("qrCodeUrl")) : null;
+        if ("null".equalsIgnoreCase(qrCodeUrl) || (qrCodeUrl != null && qrCodeUrl.isBlank())) {
+            qrCodeUrl = null;
+        }
+
+        return new PaymentMomoCreateResponseDTO(payUrl, deeplink, qrCodeUrl, request.orderId());
     }
 
     @Override
@@ -262,7 +283,7 @@ public class PaymentServiceImpl implements PaymentService {
     }
 
     private String buildCreateSignatureRaw(String requestId, String orderId, int amount,
-                                           String orderInfo, String requestType) {
+                                           String orderInfo, String requestType, String redirectUrl) {
         return "accessKey=" + momoConfig.getAccessKey()
                 + "&amount=" + amount
                 + "&extraData="
@@ -270,7 +291,7 @@ public class PaymentServiceImpl implements PaymentService {
                 + "&orderId=" + orderId
                 + "&orderInfo=" + orderInfo
                 + "&partnerCode=" + momoConfig.getPartnerCode()
-                + "&redirectUrl=" + momoConfig.getRedirectUrl()
+                + "&redirectUrl=" + redirectUrl
                 + "&requestId=" + requestId
                 + "&requestType=" + requestType;
     }

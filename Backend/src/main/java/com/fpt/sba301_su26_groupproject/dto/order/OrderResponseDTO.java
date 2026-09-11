@@ -20,5 +20,11 @@ public record OrderResponseDTO(
     LocalDateTime createdAt,
 
     @Schema(description = "Link thanh toán MoMo — chỉ có khi vừa tạo order, null khi query lại")
-    String payUrl
+    String payUrl,
+
+    @Schema(description = "Deeplink mở trực tiếp App MoMo trên điện thoại")
+    String deeplink,
+
+    @Schema(description = "URL mã QR thanh toán MoMo")
+    String qrCodeUrl
 ) {}

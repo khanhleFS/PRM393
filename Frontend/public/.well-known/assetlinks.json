@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.fpt.prm393_novel_app",
+      "sha256_cert_fingerprints": [
+        "14:6D:E9:7C:0F:86:AC:AE:E0:E4:B6:17:74:49:10:98:A2:38:FC:46:1D:5B:46:38:CB:0D:37:A6:6C:5F:7A:B2"
+      ]
+    }
+  }
+]
