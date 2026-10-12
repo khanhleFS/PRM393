@@ -1,246 +1,133 @@
-# React + TypeScript + Tailwind Dashboard
+# Luminovels Mobile Client (Flutter) — PRM393
 
-A modern, fully-featured React application with TypeScript, Tailwind CSS, React Router, and shadcn/ui components.
+Ứng dụng di động đọc truyện trực tuyến có bản quyền **Luminovels**, phát triển bằng **Flutter 3** và kiến trúc **BLoC / Cubit Pattern**, kết nối trực tiếp với backend Spring Boot.
 
-## Features
+---
 
-✨ **Modern Tech Stack**
-- React 18+ with TypeScript
-- Vite for lightning-fast development
-- Tailwind CSS for styling
-- React Router for navigation
-- shadcn/ui component library
-- Lucide React for icons
+## 🚀 Các tính năng chính (Reader Flow)
 
-🎨 **Pre-configured Components**
-- Dashboard layout with sidebar navigation
-- Example pages (Home, Dashboard)
-- Ready-to-use shadcn/ui components
+1. **Xác thực & Người dùng (Authentication)**:
+   - Đăng nhập (JWT Access Token & Refresh Token)
+   - Đăng ký tài khoản & Kích hoạt qua mã OTP 6 số gửi về Email
+   - Đăng xuất & Tự động gia hạn Access Token khi hết hạn (Interceptors)
+2. **Khám phá tác phẩm (Home & Explore)**:
+   - Danh sách truyện mới cập nhật, truyện nổi bật
+   - Lọc tác phẩm theo danh mục / thể loại (Tất cả, Tiên hiệp, Ngôn tình, Trinh thám, v.v.)
+   - Xem chi tiết tác phẩm (Ảnh bìa, tác giả, mô tả tóm tắt, số chương, lượt xem)
+3. **Tìm kiếm truyện (Search)**:
+   - Tìm kiếm theo từ khóa (tên truyện, tác giả)
+   - Bộ lọc trạng thái: Đang ra (ONGOING) / Hoàn thành (COMPLETED)
+4. **Trình đọc truyện bảo mật (Secure Reader - Hero Feature)**:
+   - **Giải mã AES-256-CBC phía Client**: Tự động sinh khóa động `SHA-256(contextId:ivHex)` và giải mã chuỗi HEX `encryptedData` + `iv` nhận từ API backend.
+   - **Chống sao chép nội dung**: Vô hiệu hóa bôi đen/copy văn bản (`SelectionContainer.disabled`).
+   - **Tùy biến giao diện đọc**: Điều chỉnh cỡ chữ (A- / A+), chuyển đổi font có chân (`Literata Serif`) và không chân (`Plus Jakarta Sans`), đổi chế độ màu (Giấy ngà đọc sách, Ban đêm Night mode, Trắng sáng).
+   - **Chương VIP có phí**: Hiển thị bảng khóa chương, kiểm tra số dư xu và thực hiện mở khóa trực tiếp bằng API `POST /unlock`.
+   - **Chuyển chương mượt mà**: Nút "Chương trước" / "Chương sau" và tự động cuộn lên đầu trang.
+5. **Tủ sách & Tiến độ đọc (Library & Bookmark)**:
+   - Lưu truyện yêu thích (yêu thích/bỏ yêu thích)
+   - Tự động ghi nhớ chương đang đọc dở và nút "Đọc tiếp" nhanh.
+6. **Hệ thống Xu & Nạp tiền (Coin & Shop)**:
+   - Hiển thị số dư xu thực tế
+   - Danh sách các gói xu nạp
+7. **Cấu hình địa chỉ Backend linh hoạt**:
+   - Tùy chỉnh `Base URL` trực tiếp ngay trong màn hình Tài khoản (Profile) mà không cần build lại app (hỗ trợ máy ảo Android `10.0.2.2`, máy thật `192.168.x.x`, hoặc web `localhost`).
 
-🚀 **Developer Experience**
-- Hot Module Replacement (HMR)
-- Type-safe component development
-- Path aliases (@/components, @/lib, etc.)
-- Ready for production builds
+---
 
-## Quick Start
+## 📁 Cấu trúc thư mục (`lib/`)
 
-### Prerequisites
-- Node.js 16+ 
-- npm or yarn
+```
+lib/
+├── core/
+│   ├── constants/
+│   │   ├── api_endpoints.dart    # Configurable base URL & endpoints
+│   │   └── app_colors.dart       # Bảng màu Lumina Scroll Theme
+│   ├── network/
+│   │   ├── api_client.dart       # Dio HTTP client với JWT Interceptor
+│   │   └── api_response.dart     # Standard ApiResponse parser
+│   ├── security/
+│   │   └── encryption_service.dart # AES-256-CBC Decryption & Key derivation
+│   ├── storage/
+│   │   └── local_storage.dart    # SharedPreferences lưu token & cài đặt
+│   └── theme/
+│       └── app_theme.dart        # Plus Jakarta Sans, Literata font Material 3
+├── data/
+│   ├── models/
+│   │   ├── user_model.dart       # UserModel, LoginResponseModel
+│   │   ├── novel_model.dart      # NovelModel, CategoryModel, NovelPageResponse
+│   │   ├── chapter_model.dart    # ChapterModel, ChapterUnlockResponseModel
+│   │   ├── bookmark_model.dart   # BookmarkModel
+│   │   └── coin_package_model.dart # CoinPackageModel, CoinTransactionModel
+│   └── repositories/
+│       ├── auth_repository.dart
+│       ├── novel_repository.dart
+│       ├── chapter_repository.dart
+│       ├── bookmark_repository.dart
+│       └── coin_repository.dart
+├── bloc/
+│   ├── auth/                     # AuthBloc, AuthEvent, AuthState
+│   ├── novel/                    # NovelBloc, NovelEvent, NovelState
+│   ├── reader/                   # ReaderBloc, ReaderEvent, ReaderState
+│   └── bookmark/                 # BookmarkBloc, BookmarkEvent, BookmarkState
+├── presentation/
+│   ├── widgets/
+│   │   ├── novel_card.dart       # Card hiển thị truyện
+│   │   └── coin_badge.dart       # Huy hiệu hiển thị xu
+│   └── screens/
+│       ├── splash/splash_screen.dart
+│       ├── auth/
+│       │   ├── login_screen.dart
+│       │   ├── register_screen.dart
+│       │   └── otp_verification_screen.dart
+│       ├── main_nav_screen.dart   # Bottom Navigation 4 tab
+│       ├── home/home_screen.dart
+│       ├── search/search_screen.dart
+│       ├── novel_detail/novel_detail_screen.dart
+│       ├── reader/reader_screen.dart
+│       ├── library/library_screen.dart
+│       ├── coin/coin_shop_screen.dart
+│       └── profile/profile_screen.dart
+└── main.dart                     # Entrypoint (MultiRepository & MultiBloc)
+```
 
-### Installation
+---
 
-1. Install dependencies:
+## 🛠 Hướng dẫn chạy ứng dụng
+
+### 1. Chuẩn bị Backend
+Khởi động cụm backend Spring Boot & DB bằng Docker Compose từ thư mục gốc dự án:
 ```bash
-npm install
+docker compose up -d
 ```
+Backend sẽ lắng nghe tại cổng `http://localhost:8080`.
 
-2. Start the development server:
+### 2. Chạy ứng dụng Flutter
+Vào thư mục `Frontend`:
 ```bash
-npm run dev
+cd Frontend
+flutter pub get
 ```
 
-3. Open your browser to `http://localhost:5173`
+Chạy trên thiết bị mong muốn:
+- **Chạy trên máy ảo Android Emulator**:
+  ```bash
+  flutter run
+  ```
+  *(Base URL mặc định trên máy ảo Android là `http://10.0.2.2:8080/api`)*
 
-## Project Structure
+- **Chạy trên máy thật (USB Debugging / WiFi LAN)**:
+  ```bash
+  flutter run
+  ```
+  *(Vào tab **Tài khoản** -> **Cấu hình Backend API IP** -> Nhập `http://<IP_Máy_Tính_Của_Bạn>:8080/api`)*
 
-```
-src/
-├── components/
-│   └── ui/              # shadcn/ui components
-├── pages/
-│   ├── Layout.tsx       # Main layout with sidebar
-│   ├── Home.tsx         # Home page
-│   └── Dashboard.tsx    # Dashboard page
-├── lib/
-│   └── utils.ts         # Utility functions
-├── hooks/
-│   └── use-mobile.ts    # Custom hooks
-├── App.tsx              # Main app with routing
-├── main.tsx             # Entry point
-└── index.css            # Global Tailwind styles
-```
+- **Chạy trên trình duyệt Web (Chrome)**:
+  ```bash
+  flutter run -d chrome
+  ```
 
-## Available Scripts
-
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run preview` - Preview production build locally
-- `npm run lint` - Run linter (if configured)
-
-## Adding Components
-
-Add more shadcn/ui components:
-```bash
-npm exec shadcn@4.6.0 add [component-name]
-```
-
-Popular components to try:
-- `button` - Interactive button component
-- `input` - Text input field
-- `dropdown-menu` - Dropdown menu
-- `dialog` - Modal dialog
-- `tabs` - Tab navigation
-- `form` - Form builder utilities
-
-See [shadcn/ui docs](https://ui.shadcn.com/docs) for all available components.
-
-## Navigation
-
-The application includes React Router setup with two example pages:
-
-- **Home** (`/`) - Welcome page with project info
-- **Dashboard** (`/dashboard`) - Example dashboard with cards
-
-Add more routes by updating `src/App.tsx` and creating new page components in `src/pages/`.
-
-## Configuration Files
-
-- **`components.json`** - shadcn/ui configuration
-- **`tailwind.config.js`** - Tailwind CSS customization
-- **`vite.config.ts`** - Vite build configuration with path aliases
-- **`tsconfig.json`** - TypeScript configuration with path aliases
-- **`tsconfig.app.json`** - App-specific TypeScript settings
-
-## Path Aliases
-
-Import components with clean paths:
-```tsx
-import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
-```
-
-## Production Build
-
-Create an optimized production build:
-```bash
-npm run build
-```
-
-The build output will be in the `dist/` directory.
-
-## Customization
-
-### Add a New Page
-
-1. Create a new file in `src/pages/`:
-```tsx
-// src/pages/MyPage.tsx
-export default function MyPage() {
-  return <div>My Page</div>
-}
-```
-
-2. Add a route in `src/App.tsx`:
-```tsx
-<Route path="/my-page" element={<MyPage />} />
-```
-
-3. Add navigation link in `src/pages/Layout.tsx`
-
-### Customize Tailwind
-
-Edit `tailwind.config.js` to customize colors, spacing, and more:
-```js
-export default {
-  theme: {
-    extend: {
-      colors: {
-        primary: '#your-color',
-      },
-    },
-  },
-}
-```
-
-## Troubleshooting
-
-**Port Already in Use**
-```bash
-npm run dev -- --port 3000
-```
-
-**Components Not Found**
-Make sure path aliases are configured in:
-- `tsconfig.json`
-- `vite.config.ts`
-
-**Styling Issues**
-Ensure Tailwind CSS is properly configured in `tailwind.config.js` and imported in `src/index.css`.
-
-## Resources
-
-- [React Documentation](https://react.dev)
-- [TypeScript Documentation](https://www.typescriptlang.org)
-- [Tailwind CSS Documentation](https://tailwindcss.com)
-- [React Router Documentation](https://reactrouter.com)
-- [shadcn/ui Documentation](https://ui.shadcn.com)
-- [Vite Documentation](https://vite.dev)
-
-## License
-
-MIT
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
-
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+- **Build file APK cài đặt cho điện thoại Android**:
+  ```bash
+  flutter build apk --release
+  ```
+  File APK sẽ nằm tại `Frontend/build/app/outputs/flutter-apk/app-release.apk`.
