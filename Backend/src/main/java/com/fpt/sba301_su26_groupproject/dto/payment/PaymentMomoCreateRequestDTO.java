@@ -19,5 +19,15 @@ public record PaymentMomoCreateRequestDTO(
         String orderInfo,
 
         @Schema(example = "captureWallet", defaultValue = "captureWallet")
-        String requestType
-) {}
+        String requestType,
+
+        @Schema(example = "WEB", defaultValue = "WEB", description = "Platform tạo order: WEB | MOBILE")
+        String platform,
+
+        @Schema(example = "novelapp://payment/callback", description = "Custom URL redirect khi thanh toán xong trên mobile (tuỳ chọn)")
+        String redirectUrl
+) {
+    public PaymentMomoCreateRequestDTO(String orderId, Integer amount, String orderInfo, String requestType) {
+        this(orderId, amount, orderInfo, requestType, "WEB", null);
+    }
+}

@@ -12,6 +12,7 @@ public class SecurityConstants {
             "/api/categories",
             "/api/novels/**",
             "/api/chapters/**",
+            "/api/app/**",
             "/",
             "/home",
             "/login",
