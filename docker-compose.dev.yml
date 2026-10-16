@@ -1,9 +1,33 @@
-# Chỉ chạy infrastructure, KHÔNG chạy app
-# Dùng khi dev local trên IntelliJ
 services:
   sba-redis:
     image: redis:alpine
     container_name: redis-dev
     ports:
       - "6379:6379"
+    restart: unless-stopped
+
+  sba-backend:
+    build:
+      context: ./Backend
+      dockerfile: Dockerfile
+    container_name: sba-backend
+    ports:
+      - "8080:8080"
+    depends_on:
+      - sba-redis
+    env_file:
+      - .env
+    environment:
+      - DB_HOST=host.docker.internal
+      - DB_PORT=1433
+      - DB_NAME=${DB_NAME}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - REDIS_HOST=sba-redis
+      - REDIS_PORT=6379
+      - SPRING_DATA_REDIS_HOST=sba-redis
+      - SPRING_DATA_REDIS_PORT=6379
+      - SPRING_PROFILES_ACTIVE=mssql
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     restart: unless-stopped
