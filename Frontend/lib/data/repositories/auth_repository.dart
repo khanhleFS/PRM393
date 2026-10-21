@@ -30,27 +30,30 @@ class AuthRepository {
         throw Exception(apiRes.message.isNotEmpty ? apiRes.message : 'Đăng nhập thất bại');
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? e.message ?? 'Đăng nhập thất bại';
-      throw Exception(msg);
+      throw Exception(_extractErrorMessage(e, 'Đăng nhập thất bại'));
     }
   }
 
   Future<String> register({
-    required String username,
+    required String fullName,
     required String email,
     required String password,
-    String? phone,
+    required String confirmPassword,
+    required String phone,
     String? address,
   }) async {
     try {
       final response = await _client.dio.post(
         ApiEndpoints.register,
         data: {
-          'username': username.trim(),
+          'fullName': fullName.trim(),
+          'username': fullName.trim(),
           'email': email.trim(),
           'password': password,
-          if (phone != null && phone.isNotEmpty) 'phone': phone.trim(),
-          if (address != null && address.isNotEmpty) 'address': address.trim(),
+          'confirmPassword': confirmPassword,
+          'phone': phone.trim(),
+          if (address != null && address.trim().isNotEmpty) 'address': address.trim(),
+          'isActive': false,
         },
       );
 
@@ -60,11 +63,10 @@ class AuthRepository {
             ? apiRes.message
             : 'Đăng ký thành công. Vui lòng kiểm tra email để nhận mã OTP.';
       } else {
-        throw Exception(apiRes.message);
+        throw Exception(apiRes.message.isNotEmpty ? apiRes.message : 'Đăng ký thất bại');
       }
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? e.message ?? 'Đăng ký thất bại';
-      throw Exception(msg);
+      throw Exception(_extractErrorMessage(e, 'Đăng ký thất bại'));
     }
   }
 
@@ -78,9 +80,24 @@ class AuthRepository {
       final apiRes = ApiResponse.fromJson(response.data as Map<String, dynamic>);
       return apiRes.isSuccess;
     } on DioException catch (e) {
-      final msg = e.response?.data?['message'] ?? e.message ?? 'Xác thực OTP thất bại';
-      throw Exception(msg);
+      throw Exception(_extractErrorMessage(e, 'Xác thực OTP thất bại'));
     }
+  }
+
+  String _extractErrorMessage(DioException e, String defaultMessage) {
+    if (e.response?.data is Map<String, dynamic>) {
+      final data = e.response!.data as Map<String, dynamic>;
+      if (data['errors'] is Map) {
+        final errors = data['errors'] as Map;
+        if (errors.isNotEmpty) {
+          return errors.values.map((v) => v.toString()).join('\n');
+        }
+      }
+      if (data['message'] != null && data['message'].toString().isNotEmpty) {
+        return data['message'].toString();
+      }
+    }
+    return e.message ?? defaultMessage;
   }
 
   Future<void> logout() async {

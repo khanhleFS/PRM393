@@ -1,3 +1,8 @@
 .env
 .env.local
 Backend/.env.local
+.idea/caches/deviceStreaming.xml
+.idea/modules.xml
+.idea/PRM393.iml
+.idea/data_source_mapping.xml
+.idea/dataSources.xml
