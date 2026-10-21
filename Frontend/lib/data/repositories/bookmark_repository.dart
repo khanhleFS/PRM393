@@ -48,6 +48,7 @@ class BookmarkRepository {
     bool isFavorite = true,
     dynamic lastChapterId,
     int? lastPage,
+    int? readingProgressPercent,
   }) async {
     try {
       final data = <String, dynamic>{
@@ -59,6 +60,9 @@ class BookmarkRepository {
       }
       if (lastPage != null) {
         data['lastPage'] = lastPage;
+      }
+      if (readingProgressPercent != null) {
+        data['readingProgressPercent'] = readingProgressPercent;
       }
 
       final response = await _client.dio.post(

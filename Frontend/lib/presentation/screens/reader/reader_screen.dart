@@ -261,11 +261,19 @@ class _ReaderViewState extends State<_ReaderView> {
     return BlocConsumer<ReaderBloc, ReaderState>(
       listener: (context, state) {
         if (state is ReaderLoaded) {
+          int progress = 1;
+          if (state.chaptersList.isNotEmpty) {
+            final total = state.chaptersList.length;
+            final currentNum = state.chapter.chapterNumber;
+            progress = ((currentNum / total) * 100).clamp(1, 100).round();
+          }
+
           // Sync reading progress with BookmarkBloc
           context.read<BookmarkBloc>().add(
                 UpdateReadingProgressEvent(
                   novelId: state.chapter.novelId,
                   lastChapterId: state.chapter.id,
+                  readingProgressPercent: progress,
                 ),
               );
         } else if (state is ReaderError) {

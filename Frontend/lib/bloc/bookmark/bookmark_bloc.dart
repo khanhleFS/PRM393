@@ -55,7 +55,10 @@ class BookmarkBloc extends Bloc<BookmarkEvent, BookmarkState> {
         isFavorite: true,
         lastChapterId: event.lastChapterId,
         lastPage: event.lastPage,
+        readingProgressPercent: event.readingProgressPercent,
       );
+      final updated = await bookmarkRepository.getMyBookmarks();
+      emit(BookmarkLoaded(updated));
     } catch (_) {
       // Background sync, silent fail
     }
