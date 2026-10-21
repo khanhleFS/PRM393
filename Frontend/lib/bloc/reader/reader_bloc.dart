@@ -30,7 +30,13 @@ class ReaderBloc extends Bloc<ReaderEvent, ReaderState> {
       // Find previous and next chapters if chapter list is provided
       ChapterModel? prev;
       ChapterModel? next;
-      final chapters = event.chaptersList ?? [];
+      List<ChapterModel> chapters = event.chaptersList ?? [];
+
+      if (chapters.isEmpty) {
+        try {
+          chapters = await chapterRepository.getChapters(event.novelId);
+        } catch (_) {}
+      }
 
       if (chapters.isNotEmpty) {
         final currentIndex = chapters.indexWhere(
