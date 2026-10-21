@@ -1,9 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../bloc/novel/novel_bloc.dart';
-import '../../../bloc/novel/novel_event.dart';
-import '../../../bloc/novel/novel_state.dart';
+import '../../../bloc/search/search_bloc.dart';
+import '../../../bloc/search/search_event.dart';
+import '../../../bloc/search/search_state.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../data/models/novel_model.dart';
@@ -71,8 +71,8 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   void _triggerSearch() {
-    context.read<NovelBloc>().add(
-          SearchNovelsEvent(
+    context.read<SearchBloc>().add(
+          SearchNovelsQueryEvent(
             query: _searchController.text.trim(),
             status: _selectedStatus,
             category: _selectedCategory,
@@ -99,7 +99,7 @@ class _SearchScreenState extends State<SearchScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Tìm kiếm & Khám phá',
           style: AppTypography.h2,
         ),
@@ -150,17 +150,17 @@ class _SearchScreenState extends State<SearchScreen> {
 
           // 3. Search Results & View Mode Toggle
           Expanded(
-            child: BlocBuilder<NovelBloc, NovelState>(
+            child: BlocBuilder<SearchBloc, SearchState>(
               builder: (context, state) {
-                if (state is NovelLoading) {
+                if (state is SearchLoading) {
                   return _buildLoadingState();
                 }
 
-                if (state is NovelError) {
+                if (state is SearchError) {
                   return _buildErrorState(state.message);
                 }
 
-                if (state is NovelSearchLoaded) {
+                if (state is SearchLoaded) {
                   if (state.novels.isEmpty) {
                     return _buildEmptyState();
                   }
@@ -657,7 +657,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          const Text(
+          Text(
             'Không tìm thấy tác phẩm',
             textAlign: TextAlign.center,
             style: AppTypography.h2,
@@ -684,7 +684,7 @@ class _SearchScreenState extends State<SearchScreen> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Từ khóa gợi ý tìm kiếm:',
                 style: AppTypography.h3,
               ),
@@ -741,7 +741,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 size: AppIconSize.xl,
               ),
               const SizedBox(height: AppSpacing.md),
-              const Text(
+              Text(
                 'Đã xảy ra lỗi khi tìm kiếm',
                 style: AppTypography.h3,
               ),

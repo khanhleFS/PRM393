@@ -25,12 +25,43 @@ class AuthRepository {
         await LocalStorage.saveAccessToken(loginData.accessToken);
         await LocalStorage.saveRefreshToken(loginData.refreshToken);
         await LocalStorage.saveUserInfo(loginData.user.toJson());
-        return loginData;
+
+        UserModel userWithCoins = loginData.user;
+        try {
+          userWithCoins = await getProfile();
+        } catch (_) {}
+
+        return LoginResponseModel(
+          accessToken: loginData.accessToken,
+          refreshToken: loginData.refreshToken,
+          user: userWithCoins,
+        );
       } else {
         throw Exception(apiRes.message.isNotEmpty ? apiRes.message : 'Đăng nhập thất bại');
       }
     } on DioException catch (e) {
       throw Exception(_extractErrorMessage(e, 'Đăng nhập thất bại'));
+    }
+  }
+
+  Future<UserModel> getProfile() async {
+    try {
+      final response = await _client.dio.get(ApiEndpoints.profile);
+      final apiRes = ApiResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+
+      if (apiRes.isSuccess && apiRes.result != null) {
+        final user = UserModel.fromJson(apiRes.result!);
+        await LocalStorage.updateUserCoins(user.coinBalance);
+        await LocalStorage.saveUserInfo(user.toJson());
+        return user;
+      } else {
+        throw Exception(apiRes.message.isNotEmpty ? apiRes.message : 'Lỗi tải hồ sơ người dùng');
+      }
+    } on DioException catch (e) {
+      throw Exception(_extractErrorMessage(e, 'Lỗi tải hồ sơ người dùng'));
     }
   }
 

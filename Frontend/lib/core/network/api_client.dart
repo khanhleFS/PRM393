@@ -8,6 +8,50 @@ class ApiClient {
   factory ApiClient() => _instance;
 
   late final Dio dio;
+  Future<String?>? _refreshFuture;
+
+  Future<String?> _performTokenRefresh() async {
+    if (_refreshFuture != null) {
+      return _refreshFuture;
+    }
+    _refreshFuture = _doRefreshToken();
+    try {
+      return await _refreshFuture;
+    } finally {
+      _refreshFuture = null;
+    }
+  }
+
+  Future<String?> _doRefreshToken() async {
+    final refreshToken = LocalStorage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) return null;
+
+    try {
+      final refreshResponse = await Dio().post(
+        ApiEndpoints.refreshToken,
+        data: {'refreshToken': refreshToken},
+      );
+
+      if (refreshResponse.statusCode == 200 &&
+          refreshResponse.data != null &&
+          refreshResponse.data['result'] != null) {
+        final newAccess = refreshResponse.data['result']['accessToken'] as String?;
+        final newRefresh = refreshResponse.data['result']['refreshToken'] as String?;
+
+        if (newAccess != null) {
+          await LocalStorage.saveAccessToken(newAccess);
+          if (newRefresh != null) {
+            await LocalStorage.saveRefreshToken(newRefresh);
+          }
+          return newAccess;
+        }
+      }
+    } catch (refreshErr) {
+      debugPrint('[API] Refresh token failed: $refreshErr');
+      await LocalStorage.clearAuth();
+    }
+    return null;
+  }
 
   ApiClient._internal() {
     dio = Dio(
@@ -38,48 +82,32 @@ class ApiClient {
         onError: (DioException error, handler) async {
           debugPrint('[API Error] ${error.response?.statusCode} <= ${error.requestOptions.uri}: ${error.message}');
 
-          // Check if 401 Unauthorized and attempt token refresh
+          // Check if 401 Unauthorized and not already retried
+          final isRetry = error.requestOptions.extra['_isRetry'] == true;
           if (error.response?.statusCode == 401 &&
+              !isRetry &&
               !error.requestOptions.path.contains('/auth/login') &&
               !error.requestOptions.path.contains('/auth/refresh')) {
-            final refreshToken = LocalStorage.getRefreshToken();
-            if (refreshToken != null && refreshToken.isNotEmpty) {
+            final newAccess = await _performTokenRefresh();
+            if (newAccess != null) {
+              // Retry original request with new token
+              final opts = error.requestOptions;
+              opts.headers['Authorization'] = 'Bearer $newAccess';
+              opts.extra['_isRetry'] = true;
               try {
-                final refreshResponse = await Dio().post(
-                  ApiEndpoints.refreshToken,
-                  data: {'refreshToken': refreshToken},
+                final cloneReq = await dio.request(
+                  opts.path,
+                  options: Options(
+                    method: opts.method,
+                    headers: opts.headers,
+                    extra: opts.extra,
+                  ),
+                  data: opts.data,
+                  queryParameters: opts.queryParameters,
                 );
-
-                if (refreshResponse.statusCode == 200 &&
-                    refreshResponse.data != null &&
-                    refreshResponse.data['result'] != null) {
-                  final newAccess = refreshResponse.data['result']['accessToken'] as String?;
-                  final newRefresh = refreshResponse.data['result']['refreshToken'] as String?;
-
-                  if (newAccess != null) {
-                    await LocalStorage.saveAccessToken(newAccess);
-                    if (newRefresh != null) {
-                      await LocalStorage.saveRefreshToken(newRefresh);
-                    }
-
-                    // Retry original request with new token
-                    final opts = error.requestOptions;
-                    opts.headers['Authorization'] = 'Bearer $newAccess';
-                    final cloneReq = await dio.request(
-                      opts.path,
-                      options: Options(
-                        method: opts.method,
-                        headers: opts.headers,
-                      ),
-                      data: opts.data,
-                      queryParameters: opts.queryParameters,
-                    );
-                    return handler.resolve(cloneReq);
-                  }
-                }
-              } catch (refreshErr) {
-                debugPrint('[API] Refresh token failed: $refreshErr');
-                await LocalStorage.clearAuth();
+                return handler.resolve(cloneReq);
+              } on DioException catch (retryError) {
+                return handler.next(retryError);
               }
             }
           }

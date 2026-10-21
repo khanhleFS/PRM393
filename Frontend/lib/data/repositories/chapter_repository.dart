@@ -6,6 +6,19 @@ import '../../core/security/encryption_service.dart';
 import '../../core/storage/local_storage.dart';
 import '../models/chapter_model.dart';
 
+class ChapterLockedException implements Exception {
+  final String message;
+  final int? code;
+
+  ChapterLockedException([
+    this.message = 'Chương này yêu cầu trả phí để đọc.',
+    this.code,
+  ]);
+
+  @override
+  String toString() => message;
+}
+
 class ChapterRepository {
   final ApiClient _client = ApiClient();
 
@@ -70,7 +83,18 @@ class ChapterRepository {
         throw Exception(apiRes.message);
       }
     } on DioException catch (e) {
+      final code = e.response?.data?['code'];
       final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi tải nội dung chương';
+      if (code == 3009 ||
+          code == 3006 ||
+          msg.toString().toLowerCase().contains('trả phí') ||
+          msg.toString().toLowerCase().contains('locked') ||
+          msg.toString().toLowerCase().contains('đăng nhập để đọc')) {
+        throw ChapterLockedException(
+          msg.toString(),
+          code is int ? code : int.tryParse(code.toString()),
+        );
+      }
       throw Exception(msg);
     }
   }

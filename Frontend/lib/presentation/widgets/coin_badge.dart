@@ -1,47 +1,57 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+
 import '../../core/constants/app_colors.dart';
+import '../../core/constants/app_tokens.dart';
 
 class CoinBadge extends StatelessWidget {
   final int coins;
   final VoidCallback? onTap;
 
-  const CoinBadge({
-    super.key,
-    required this.coins,
-    this.onTap,
-  });
+  const CoinBadge({super.key, required this.coins, this.onTap});
 
   @override
   Widget build(BuildContext context) {
     final formatter = NumberFormat('#,###');
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: AppColors.coinGold.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.coinGold.withValues(alpha: 0.3)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.monetization_on,
-              color: AppColors.coinGold,
-              size: 16,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.full),
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            border: Border.all(
+              color: AppColors.warning.withValues(alpha: 0.4),
+              width: 1.0,
             ),
-            const SizedBox(width: 4),
-            Text(
-              formatter.format(coins),
-              style: const TextStyle(
-                color: AppColors.primaryDark,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
+            boxShadow: AppElevation.cardShadow,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.monetization_on_rounded,
+                color: AppColors.coinGold,
+                size: AppIconSizes.sm,
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.xs),
+              Text(
+                formatter.format(coins),
+                style: AppTypography.button.copyWith(
+                  color: AppColors.primaryDark,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.1,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -40,7 +40,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            const Text(
+            Text(
               'Luminovels',
               style: AppTypography.h2,
             ),
@@ -215,7 +215,7 @@ class HomeScreen extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          const Text(
+                          Text(
                             'Khám phá tác phẩm',
                             style: AppTypography.h2,
                           ),

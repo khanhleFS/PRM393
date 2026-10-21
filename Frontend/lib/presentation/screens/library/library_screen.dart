@@ -37,7 +37,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
           borderRadius: AppRadius.roundedXl,
           side: const BorderSide(color: AppColors.divider, width: 0.8),
         ),
-        title: const Text(
+        title: Text(
           'Bỏ theo dõi tác phẩm?',
           style: AppTypography.h3,
         ),
@@ -119,7 +119,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: const Text(
+        title: Text(
           'Tủ sách cá nhân',
           style: AppTypography.h2,
         ),
@@ -481,7 +481,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              const Text(
+              Text(
                 'Đăng nhập để xem tủ sách',
                 textAlign: TextAlign.center,
                 style: AppTypography.h2,
@@ -537,7 +537,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
-              const Text(
+              Text(
                 'Tủ sách hiện đang trống',
                 textAlign: TextAlign.center,
                 style: AppTypography.h2,
@@ -599,7 +599,7 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 size: AppIconSize.xl,
               ),
               const SizedBox(height: AppSpacing.md),
-              const Text(
+              Text(
                 'Không thể tải tủ sách',
                 style: AppTypography.h3,
               ),

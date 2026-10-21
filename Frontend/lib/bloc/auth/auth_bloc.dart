@@ -19,10 +19,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     if (authRepository.isAuthenticated()) {
-      final user = authRepository.getCurrentUser();
-      if (user != null) {
-        emit(Authenticated(user));
+      final cachedUser = authRepository.getCurrentUser();
+      if (cachedUser != null) {
+        emit(Authenticated(cachedUser));
+      }
+      try {
+        final freshProfile = await authRepository.getProfile();
+        emit(Authenticated(freshProfile));
         return;
+      } catch (_) {
+        if (cachedUser != null) {
+          return;
+        }
       }
     }
     emit(Unauthenticated());
