@@ -69,4 +69,35 @@ class CoinRepository {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>> createOrder({
+    required String coinPackageId,
+    String? orderInfo,
+  }) async {
+    try {
+      final response = await _client.dio.post(
+        '${ApiEndpoints.baseUrl}/orders',
+        data: {
+          'coinPackageId': coinPackageId,
+          'orderInfo': orderInfo ?? 'Nap coin cho tai khoan',
+          'requestType': 'captureWallet',
+          'quantity': 1,
+          'platform': 'MOBILE',
+        },
+      );
+      final apiRes = ApiResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+      if (apiRes.isSuccess && apiRes.result != null) {
+        return apiRes.result!;
+      }
+      throw Exception(
+        apiRes.message.isNotEmpty ? apiRes.message : 'Tạo đơn hàng thất bại',
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi tạo đơn hàng thanh toán';
+      throw Exception(msg);
+    }
+  }
 }

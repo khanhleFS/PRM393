@@ -48,6 +48,7 @@ class BookmarkRepository {
     bool isFavorite = true,
     dynamic lastChapterId,
     int? lastPage,
+    int? readingProgressPercent,
   }) async {
     try {
       final data = <String, dynamic>{
@@ -59,6 +60,9 @@ class BookmarkRepository {
       }
       if (lastPage != null) {
         data['lastPage'] = lastPage;
+      }
+      if (readingProgressPercent != null) {
+        data['readingProgressPercent'] = readingProgressPercent;
       }
 
       final response = await _client.dio.post(
@@ -74,9 +78,12 @@ class BookmarkRepository {
       if (apiRes.isSuccess && apiRes.result != null) {
         return BookmarkModel.fromJson(apiRes.result!);
       }
-      return null;
-    } on DioException catch (_) {
-      return null;
+      throw Exception(
+        apiRes.message.isNotEmpty ? apiRes.message : 'Thao tác lưu tủ sách thất bại',
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi cập nhật tủ sách';
+      throw Exception(msg);
     }
   }
 
@@ -84,9 +91,15 @@ class BookmarkRepository {
     try {
       final response = await _client.dio.delete(ApiEndpoints.bookmarkByNovel(novelId));
       final apiRes = ApiResponse.fromJson(response.data as Map<String, dynamic>);
-      return apiRes.isSuccess;
-    } on DioException catch (_) {
-      return false;
+      if (apiRes.isSuccess) {
+        return true;
+      }
+      throw Exception(
+        apiRes.message.isNotEmpty ? apiRes.message : 'Xóa khỏi tủ sách thất bại',
+      );
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi xóa khỏi tủ sách';
+      throw Exception(msg);
     }
   }
 }

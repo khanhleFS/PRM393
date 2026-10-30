@@ -15,18 +15,23 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _usernameController = TextEditingController();
+  final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
 
   @override
   void dispose() {
-    _usernameController.dispose();
+    _fullNameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
+    _confirmPasswordController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
@@ -34,10 +39,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<AuthBloc>().add(
             RegisterRequestedEvent(
-              username: _usernameController.text,
+              fullName: _fullNameController.text,
               email: _emailController.text,
               password: _passwordController.text,
+              confirmPassword: _confirmPasswordController.text,
               phone: _phoneController.text,
+              address: _addressController.text.trim().isNotEmpty
+                  ? _addressController.text.trim()
+                  : null,
             ),
           );
     }
@@ -100,16 +109,29 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Username
+                  // Full name
                   TextFormField(
-                    controller: _usernameController,
+                    controller: _fullNameController,
                     decoration: const InputDecoration(
-                      labelText: 'Họ và tên / Biệt danh',
+                      labelText: 'Họ và tên',
                       prefixIcon: Icon(Icons.person_outline),
+                      hintText: 'VD: Nguyen Van A',
                     ),
                     validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'Vui lòng nhập họ và tên';
+                      if (val == null || val.isEmpty) {
+                        return 'Họ tên không được để trống.';
+                      }
+                      if (val.startsWith(' ') || val.endsWith(' ')) {
+                        return 'Họ tên không được có khoảng trắng ở đầu hoặc cuối.';
+                      }
+                      if (val.length < 9 || val.length > 50) {
+                        return 'Họ tên phải từ 9 đến 50 ký tự.';
+                      }
+                      if (!RegExp(r'^[\p{L} ]+$', unicode: true).hasMatch(val)) {
+                        return 'Họ tên chỉ được chứa chữ cái và khoảng trắng.';
+                      }
+                      if (RegExp(r'\s{2,}').hasMatch(val)) {
+                        return 'Họ tên không được có 2 khoảng trắng liên tiếp.';
                       }
                       return null;
                     },
@@ -122,13 +144,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Email',
                       prefixIcon: Icon(Icons.email_outlined),
+                      hintText: 'user@example.com',
                     ),
                     validator: (val) {
                       if (val == null || val.trim().isEmpty) {
-                        return 'Vui lòng nhập email';
+                        return 'Email không được để trống.';
                       }
-                      if (!val.contains('@')) {
-                        return 'Email không hợp lệ';
+                      final trimmed = val.trim();
+                      if (trimmed.length < 10 || trimmed.length > 50) {
+                        return 'Email phải có độ dài từ 10 đến 50 ký tự.';
+                      }
+                      final emailRegex = RegExp(r'^[\w\.\-]+@[a-zA-Z0-9\-]+(\.[a-zA-Z0-9\-]+)+$');
+                      if (!emailRegex.hasMatch(trimmed)) {
+                        return 'Email không đúng định dạng.';
                       }
                       return null;
                     },
@@ -141,6 +169,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     decoration: InputDecoration(
                       labelText: 'Mật khẩu',
                       prefixIcon: const Icon(Icons.lock_outline),
+                      hintText: 'VD: P@ssw0rd123',
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -155,8 +184,58 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                     validator: (val) {
-                      if (val == null || val.length < 6) {
-                        return 'Mật khẩu phải từ 6 ký tự trở lên';
+                      if (val == null || val.isEmpty) {
+                        return 'Mật khẩu không được để trống.';
+                      }
+                      if (val.length < 8 || val.length > 50) {
+                        return 'Mật khẩu phải từ 8 đến 50 ký tự.';
+                      }
+                      if (val.contains(' ')) {
+                        return 'Mật khẩu không được chứa khoảng trắng.';
+                      }
+                      if (!RegExp(r'[A-Z]').hasMatch(val)) {
+                        return 'Mật khẩu phải có ít nhất 1 chữ hoa.';
+                      }
+                      if (!RegExp(r'[a-z]').hasMatch(val)) {
+                        return 'Mật khẩu phải có ít nhất 1 chữ thường.';
+                      }
+                      if (!RegExp(r'[0-9]').hasMatch(val)) {
+                        return 'Mật khẩu phải có ít nhất 1 chữ số.';
+                      }
+                      if (!RegExp(r'''[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>/?]''').hasMatch(val)) {
+                        return 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt.';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Confirm Password
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
+                    decoration: InputDecoration(
+                      labelText: 'Xác nhận mật khẩu',
+                      prefixIcon: const Icon(Icons.lock_outline),
+                      hintText: 'VD: P@ssw0rd123',
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscureConfirmPassword = !_obscureConfirmPassword;
+                          });
+                        },
+                      ),
+                    ),
+                    validator: (val) {
+                      if (val == null || val.isEmpty) {
+                        return 'Xác nhận mật khẩu không được để trống.';
+                      }
+                      if (val != _passwordController.text) {
+                        return 'Mật khẩu và xác nhận mật khẩu không khớp.';
                       }
                       return null;
                     },
@@ -167,8 +246,30 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     controller: _phoneController,
                     keyboardType: TextInputType.phone,
                     decoration: const InputDecoration(
-                      labelText: 'Số điện thoại (tùy chọn)',
+                      labelText: 'Số điện thoại',
                       prefixIcon: Icon(Icons.phone_outlined),
+                      hintText: 'VD: 0912345678',
+                    ),
+                    validator: (val) {
+                      if (val == null || val.trim().isEmpty) {
+                        return 'Số điện thoại không được để trống.';
+                      }
+                      final phoneRegex = RegExp(r'^0[3|5|7|8|9][0-9]{8}$');
+                      if (!phoneRegex.hasMatch(val.trim())) {
+                        return 'Số điện thoại không đúng định dạng (VD: 0912345678).';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  // Address (optional)
+                  TextFormField(
+                    controller: _addressController,
+                    keyboardType: TextInputType.streetAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Địa chỉ (tùy chọn)',
+                      prefixIcon: Icon(Icons.location_on_outlined),
+                      hintText: 'VD: 123 Nguyen Trai, Q1, TP.HCM',
                     ),
                   ),
                   const SizedBox(height: 28),

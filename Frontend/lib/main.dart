@@ -2,11 +2,14 @@ import 'package:device_preview_plus/device_preview_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
+
 import 'bloc/auth/auth_bloc.dart';
 import 'bloc/auth/auth_event.dart';
 import 'bloc/bookmark/bookmark_bloc.dart';
 import 'bloc/novel/novel_bloc.dart';
 import 'bloc/novel/novel_event.dart';
+import 'bloc/search/search_bloc.dart';
 import 'core/constants/api_endpoints.dart';
 import 'core/storage/local_storage.dart';
 import 'core/theme/app_theme.dart';
@@ -23,6 +26,9 @@ void main() async {
   // Initialize storage & dynamic endpoint configurations
   await LocalStorage.init();
   await ApiEndpoints.init();
+
+  // Enforce offline-only fonts: do not fetch fonts over network at runtime
+  GoogleFonts.config.allowRuntimeFetching = false;
 
   runApp(
     DevicePreview(
@@ -48,18 +54,23 @@ class MyApp extends StatelessWidget {
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
-            create: (context) => AuthBloc(
-              authRepository: context.read<AuthRepository>(),
-            )..add(CheckAuthStatusEvent()),
+            create: (context) =>
+                AuthBloc(authRepository: context.read<AuthRepository>())
+                  ..add(CheckAuthStatusEvent()),
           ),
           BlocProvider(
-            create: (context) => NovelBloc(
-              novelRepository: context.read<NovelRepository>(),
-            )..add(FetchHomeDataEvent()),
+            create: (context) =>
+                NovelBloc(novelRepository: context.read<NovelRepository>())
+                  ..add(FetchHomeDataEvent()),
           ),
           BlocProvider(
             create: (context) => BookmarkBloc(
               bookmarkRepository: context.read<BookmarkRepository>(),
+            ),
+          ),
+          BlocProvider(
+            create: (context) => SearchBloc(
+              novelRepository: context.read<NovelRepository>(),
             ),
           ),
         ],

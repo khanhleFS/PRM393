@@ -29,12 +29,14 @@ class NovelHomeLoaded extends NovelState {
     List<NovelModel>? latestNovels,
     List<CategoryModel>? categories,
     String? selectedCategory,
+    bool clearCategory = false,
   }) {
     return NovelHomeLoaded(
       featuredNovels: featuredNovels ?? this.featuredNovels,
       latestNovels: latestNovels ?? this.latestNovels,
       categories: categories ?? this.categories,
-      selectedCategory: selectedCategory ?? this.selectedCategory,
+      selectedCategory:
+          clearCategory ? null : (selectedCategory ?? this.selectedCategory),
     );
   }
 

@@ -6,6 +6,7 @@ import '../../../bloc/novel/novel_bloc.dart';
 import '../../../bloc/novel/novel_event.dart';
 import '../../../bloc/novel/novel_state.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/theme/app_tokens.dart';
 import '../../widgets/coin_badge.dart';
 import '../../widgets/novel_card.dart';
 import '../auth/login_screen.dart';
@@ -18,30 +19,30 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppColors.background,
       appBar: AppBar(
-        titleSpacing: 16,
+        backgroundColor: AppColors.background,
+        elevation: AppElevation.none,
+        scrolledUnderElevation: AppElevation.card,
+        titleSpacing: AppSpacing.md,
         title: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: AppColors.primary,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: AppRadius.roundedMd,
               ),
               child: const Icon(
                 Icons.auto_stories,
-                size: 20,
-                color: Colors.white,
+                size: AppIconSize.sm,
+                color: AppColors.surface,
               ),
             ),
-            const SizedBox(width: 8),
-            const Text(
+            const SizedBox(width: AppSpacing.sm),
+            Text(
               'Luminovels',
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: AppColors.primaryDark,
-                fontSize: 18,
-              ),
+              style: AppTypography.h2,
             ),
           ],
         ),
@@ -50,7 +51,7 @@ class HomeScreen extends StatelessWidget {
             builder: (context, authState) {
               if (authState is Authenticated) {
                 return Padding(
-                  padding: const EdgeInsets.only(right: 16),
+                  padding: const EdgeInsets.only(right: AppSpacing.md),
                   child: CoinBadge(
                     coins: authState.user.coinBalance,
                     onTap: () {
@@ -71,11 +72,10 @@ class HomeScreen extends StatelessWidget {
                     ),
                   );
                 },
-                child: const Text(
+                child: Text(
                   'Đăng nhập',
-                  style: TextStyle(
+                  style: AppTypography.button.copyWith(
                     color: AppColors.primary,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
               );
@@ -85,6 +85,7 @@ class HomeScreen extends StatelessWidget {
       ),
       body: RefreshIndicator(
         color: AppColors.primary,
+        backgroundColor: AppColors.surface,
         onRefresh: () async {
           context.read<NovelBloc>().add(FetchHomeDataEvent());
         },
@@ -99,29 +100,40 @@ class HomeScreen extends StatelessWidget {
             if (state is NovelError) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(
-                        Icons.wifi_off_outlined,
-                        size: 48,
-                        color: Colors.grey,
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        state.message,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(color: AppColors.textSecondary),
-                      ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () {
-                          context.read<NovelBloc>().add(FetchHomeDataEvent());
-                        },
-                        child: const Text('Thử lại'),
-                      ),
-                    ],
+                  padding: AppSpacing.paddingLg,
+                  child: Container(
+                    padding: AppSpacing.paddingLg,
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: AppRadius.roundedLg,
+                      border: Border.all(color: AppColors.divider, width: 0.8),
+                      boxShadow: AppElevation.shadowCard,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.wifi_off_outlined,
+                          size: AppIconSize.xl,
+                          color: AppColors.disabled,
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          state.message,
+                          textAlign: TextAlign.center,
+                          style: AppTypography.bodyM.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        ElevatedButton(
+                          onPressed: () {
+                            context.read<NovelBloc>().add(FetchHomeDataEvent());
+                          },
+                          child: const Text('Thử lại'),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -133,12 +145,15 @@ class HomeScreen extends StatelessWidget {
                   // Category chips
                   SliverToBoxAdapter(
                     child: SizedBox(
-                      height: 52,
+                      height: AppSpacing.xl2 + AppSpacing.sm, // 48
                       child: ListView.separated(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.md,
+                          vertical: AppSpacing.sm,
+                        ),
                         scrollDirection: Axis.horizontal,
                         itemCount: state.categories.length + 1,
-                        separatorBuilder: (_, _) => const SizedBox(width: 8),
+                        separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
                         itemBuilder: (context, index) {
                           if (index == 0) {
                             final isSelected = state.selectedCategory == null;
@@ -146,10 +161,17 @@ class HomeScreen extends StatelessWidget {
                               label: const Text('Tất cả'),
                               selected: isSelected,
                               selectedColor: AppColors.primary,
-                              labelStyle: TextStyle(
-                                color: isSelected ? Colors.white : AppColors.textPrimary,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                              backgroundColor: AppColors.surface,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.roundedFull,
+                                side: BorderSide(
+                                  color: isSelected ? AppColors.primary : AppColors.divider,
+                                  width: 0.8,
+                                ),
                               ),
+                              labelStyle: isSelected
+                                  ? AppTypography.button.copyWith(fontSize: 12.5)
+                                  : AppTypography.bodyS.copyWith(color: AppColors.textDark),
                               onSelected: (_) {
                                 context.read<NovelBloc>().add(const SelectCategoryEvent(null));
                               },
@@ -162,10 +184,17 @@ class HomeScreen extends StatelessWidget {
                             label: Text(cat.name),
                             selected: isSelected,
                             selectedColor: AppColors.primary,
-                            labelStyle: TextStyle(
-                              color: isSelected ? Colors.white : AppColors.textPrimary,
-                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            backgroundColor: AppColors.surface,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.roundedFull,
+                              side: BorderSide(
+                                color: isSelected ? AppColors.primary : AppColors.divider,
+                                width: 0.8,
+                              ),
                             ),
+                            labelStyle: isSelected
+                                ? AppTypography.button.copyWith(fontSize: 12.5)
+                                : AppTypography.bodyS.copyWith(color: AppColors.textDark),
                             onSelected: (_) {
                               context.read<NovelBloc>().add(SelectCategoryEvent(cat.name));
                             },
@@ -175,27 +204,25 @@ class HomeScreen extends StatelessWidget {
                     ),
                   ),
 
-                  // Section Title: Danh sách truyện
+                  // Section Title: Khám phá tác phẩm
                   SliverToBoxAdapter(
                     child: Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md,
+                        AppSpacing.sm,
+                        AppSpacing.md,
+                        AppSpacing.xs,
+                      ),
                       child: Row(
                         children: [
-                          const Text(
+                          Text(
                             'Khám phá tác phẩm',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.textPrimary,
-                            ),
+                            style: AppTypography.h2,
                           ),
                           const Spacer(),
                           Text(
                             '${state.latestNovels.length} truyện',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                            ),
+                            style: AppTypography.caption,
                           ),
                         ],
                       ),
@@ -204,22 +231,38 @@ class HomeScreen extends StatelessWidget {
 
                   // 2-column Grid
                   state.latestNovels.isEmpty
-                      ? const SliverFillRemaining(
+                      ? SliverFillRemaining(
                           child: Center(
-                            child: Text(
-                              'Chưa có truyện nào trong danh mục này',
-                              style: TextStyle(color: AppColors.textSecondary),
+                            child: Padding(
+                              padding: AppSpacing.paddingLg,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.auto_stories_outlined,
+                                    size: AppIconSize.xl,
+                                    color: AppColors.disabled,
+                                  ),
+                                  const SizedBox(height: AppSpacing.md),
+                                  Text(
+                                    'Chưa có truyện nào trong danh mục này',
+                                    style: AppTypography.bodyM.copyWith(
+                                      color: AppColors.textSecondary,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         )
                       : SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          padding: AppSpacing.paddingMd,
                           sliver: SliverGrid(
                             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                               crossAxisCount: 2,
-                              childAspectRatio: 0.65,
-                              crossAxisSpacing: 14,
-                              mainAxisSpacing: 16,
+                              childAspectRatio: 0.62,
+                              crossAxisSpacing: AppSpacing.md,
+                              mainAxisSpacing: AppSpacing.md,
                             ),
                             delegate: SliverChildBuilderDelegate(
                               (context, index) {

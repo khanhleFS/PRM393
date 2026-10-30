@@ -47,7 +47,11 @@ class NovelBloc extends Bloc<NovelEvent, NovelState> {
   ) async {
     if (state is NovelHomeLoaded) {
       final current = state as NovelHomeLoaded;
-      emit(current.copyWith(selectedCategory: event.categorySlug));
+      final isClearing = event.categorySlug == null;
+      emit(current.copyWith(
+        selectedCategory: event.categorySlug,
+        clearCategory: isClearing,
+      ));
 
       try {
         final pageResponse = await novelRepository.searchNovels(
@@ -58,6 +62,7 @@ class NovelBloc extends Bloc<NovelEvent, NovelState> {
         emit(current.copyWith(
           latestNovels: pageResponse.content,
           selectedCategory: event.categorySlug,
+          clearCategory: isClearing,
         ));
       } catch (e) {
         emit(NovelError(e.toString().replaceAll('Exception: ', '')));

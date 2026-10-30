@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../bloc/bookmark/bookmark_bloc.dart';
+import '../../bloc/bookmark/bookmark_event.dart';
 import '../../core/constants/app_colors.dart';
+import '../../core/theme/app_tokens.dart';
 import 'home/home_screen.dart';
 import 'library/library_screen.dart';
 import 'profile/profile_screen.dart';
@@ -29,36 +33,50 @@ class _MainNavScreenState extends State<MainNavScreen> {
         index: _currentIndex,
         children: _screens,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.15),
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home, color: AppColors.primary),
-            label: 'Khám phá',
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: const Border(
+            top: BorderSide(color: AppColors.divider, width: 0.8),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.search_outlined),
-            selectedIcon: Icon(Icons.search, color: AppColors.primary),
-            label: 'Tìm kiếm',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bookmark_outline),
-            selectedIcon: Icon(Icons.bookmark, color: AppColors.primary),
-            label: 'Tủ sách',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person, color: AppColors.primary),
-            label: 'Tài khoản',
-          ),
-        ],
+          boxShadow: AppElevation.shadowCard,
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          backgroundColor: AppColors.surface,
+          elevation: AppElevation.none,
+          indicatorColor: AppColors.primary.withValues(alpha: 0.12),
+          onDestinationSelected: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+            if (index == 2) {
+              context.read<BookmarkBloc>().add(FetchBookmarksEvent());
+            }
+          },
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined, size: AppIconSize.md, color: AppColors.textDark),
+              selectedIcon: Icon(Icons.home_rounded, size: AppIconSize.md, color: AppColors.primary),
+              label: 'Khám phá',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.search_outlined, size: AppIconSize.md, color: AppColors.textDark),
+              selectedIcon: Icon(Icons.search_rounded, size: AppIconSize.md, color: AppColors.primary),
+              label: 'Tìm kiếm',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.bookmark_border_rounded, size: AppIconSize.md, color: AppColors.textDark),
+              selectedIcon: Icon(Icons.bookmark_rounded, size: AppIconSize.md, color: AppColors.primary),
+              label: 'Tủ sách',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded, size: AppIconSize.md, color: AppColors.textDark),
+              selectedIcon: Icon(Icons.person_rounded, size: AppIconSize.md, color: AppColors.primary),
+              label: 'Tài khoản',
+            ),
+          ],
+        ),
       ),
     );
   }

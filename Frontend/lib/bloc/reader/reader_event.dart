@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+
 import '../../data/models/chapter_model.dart';
 
 abstract class ReaderEvent extends Equatable {
@@ -24,14 +25,15 @@ class LoadChapterEvent extends ReaderEvent {
   List<Object?> get props => [novelId, chapterId, novelTitle, chaptersList];
 }
 
+class RetryChapterEvent extends ReaderEvent {
+  const RetryChapterEvent();
+}
+
 class UnlockChapterEvent extends ReaderEvent {
   final dynamic novelId;
   final dynamic chapterId;
 
-  const UnlockChapterEvent({
-    required this.novelId,
-    required this.chapterId,
-  });
+  const UnlockChapterEvent({required this.novelId, required this.chapterId});
 
   @override
   List<Object?> get props => [novelId, chapterId];

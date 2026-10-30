@@ -25,13 +25,15 @@ class UpdateReadingProgressEvent extends BookmarkEvent {
   final dynamic novelId;
   final dynamic lastChapterId;
   final int? lastPage;
+  final int? readingProgressPercent;
 
   const UpdateReadingProgressEvent({
     required this.novelId,
     required this.lastChapterId,
     this.lastPage,
+    this.readingProgressPercent,
   });
 
   @override
-  List<Object?> get props => [novelId, lastChapterId, lastPage];
+  List<Object?> get props => [novelId, lastChapterId, lastPage, readingProgressPercent];
 }
