@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../widgets/app_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -257,25 +257,13 @@ class _NovelDetailScreenState extends State<NovelDetailScreen> {
                           ),
                         ),
                         clipBehavior: Clip.antiAlias,
-                        child: novel.coverImageUrl.isNotEmpty
-                            ? CachedNetworkImage(
-                                imageUrl: novel.coverImageUrl,
-                                fit: BoxFit.cover,
-                                placeholder: (_, _) => Container(
-                                  color: AppColors.background.withValues(
-                                    alpha: 0.4,
-                                  ),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                ),
-                                errorWidget: (_, _, _) =>
-                                    _buildCoverPlaceholder(),
-                              )
-                            : _buildCoverPlaceholder(),
+                        child: AppNetworkImage(
+                          imageUrl: novel.coverImageUrl,
+                          fit: BoxFit.cover,
+                          memCacheWidth: 350,
+                          memCacheHeight: 500,
+                          errorWidget: _buildCoverPlaceholder(),
+                        ),
                       ),
                       const SizedBox(width: AppSpacing.md),
 

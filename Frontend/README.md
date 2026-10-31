@@ -30,7 +30,8 @@
    - Hiển thị số dư xu thực tế
    - Danh sách các gói xu nạp
 7. **Cấu hình địa chỉ Backend linh hoạt**:
-   - Tùy chỉnh `Base URL` trực tiếp ngay trong màn hình Tài khoản (Profile) mà không cần build lại app (hỗ trợ máy ảo Android `10.0.2.2`, máy thật `192.168.x.x`, hoặc web `localhost`).
+   - Mặc định kết nối trực tiếp lên Cloud Azure: `https://luminovels-prm393-demo.japaneast.cloudapp.azure.com/api`
+   - Tùy chỉnh `Base URL` trực tiếp ngay trong màn hình Tài khoản (Profile) mà không cần build lại app (hỗ trợ chuyển đổi giữa Azure, máy ảo Android `10.0.2.2`, máy thật `192.168.x.x`, hoặc web `localhost`).
 
 ---
 

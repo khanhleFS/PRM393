@@ -119,4 +119,22 @@ class ChapterRepository {
       throw Exception(msg);
     }
   }
+
+  Future<ChapterModel> generateChapterAudio(dynamic novelId, dynamic chapterId) async {
+    try {
+      final response = await _client.dio.post(ApiEndpoints.chapterAudio(novelId, chapterId));
+      final apiRes = ApiResponse<Map<String, dynamic>>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => json as Map<String, dynamic>,
+      );
+      if (apiRes.isSuccess && apiRes.result != null) {
+        return ChapterModel.fromJson(apiRes.result!);
+      } else {
+        throw Exception(apiRes.message);
+      }
+    } on DioException catch (e) {
+      final msg = e.response?.data?['message'] ?? e.message ?? 'Lỗi sinh giọng đọc AI từ máy chủ';
+      throw Exception(msg);
+    }
+  }
 }

@@ -1,5 +1,4 @@
 import 'package:device_preview_plus/device_preview_plus.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -32,7 +31,7 @@ void main() async {
 
   runApp(
     DevicePreview(
-      enabled: !kReleaseMode, // Enable preview in debug/dev mode
+      enabled: false, // Disabled to eliminate browser overhead and lag
       builder: (context) => const MyApp(),
     ),
   );

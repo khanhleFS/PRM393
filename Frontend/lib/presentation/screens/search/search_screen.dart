@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../widgets/app_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../bloc/search/search_bloc.dart';
@@ -24,7 +24,7 @@ class _SearchScreenState extends State<SearchScreen> {
 
   String? _selectedStatus; // null, 'ONGOING', 'COMPLETED'
   String? _selectedCategory; // null or category name
-  bool _isGridView = true;
+  bool _isGridView = false;
   List<CategoryModel> _categories = [];
   bool _isLoadingCategories = false;
 
@@ -128,19 +128,28 @@ class _SearchScreenState extends State<SearchScreen> {
       ),
       body: Column(
         children: [
-          // 1. Search Box
+          // 1. Search Box with Filter Button on the right
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.md,
               AppSpacing.xs,
               AppSpacing.md,
-              AppSpacing.sm,
+              AppSpacing.xs,
             ),
-            child: _buildSearchBar(),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _buildSearchBar(),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _buildFilterButton(),
+              ],
+            ),
           ),
 
-          // 2. Filter Bar (Status & Categories)
-          _buildFilterBar(),
+          // Active filter tags (if any filter is selected)
+          if (_selectedCategory != null || _selectedStatus != null)
+            _buildActiveFilterBadges(),
 
           const Divider(
             height: AppSpacing.md,
@@ -240,145 +249,417 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildFilterBar() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Status row
-        SizedBox(
-          height: AppSpacing.xl + AppSpacing.xs, // 36.0
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            padding: AppSpacing.horizontalMd,
-            children: [
-              _buildChoiceChip(
-                label: 'Tất cả trạng thái',
-                isSelected: _selectedStatus == null,
-                onTap: () {
-                  setState(() => _selectedStatus = null);
-                  _triggerSearch();
-                },
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _buildChoiceChip(
-                label: 'Đang ra',
-                isSelected: _selectedStatus == 'ONGOING',
-                onTap: () {
-                  setState(() {
-                    _selectedStatus = _selectedStatus == 'ONGOING' ? null : 'ONGOING';
-                  });
-                  _triggerSearch();
-                },
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _buildChoiceChip(
-                label: 'Hoàn thành',
-                isSelected: _selectedStatus == 'COMPLETED',
-                onTap: () {
-                  setState(() {
-                    _selectedStatus = _selectedStatus == 'COMPLETED' ? null : 'COMPLETED';
-                  });
-                  _triggerSearch();
-                },
-              ),
-            ],
+  Widget _buildFilterButton() {
+    final hasFilter = _selectedCategory != null || _selectedStatus != null;
+    final filterCount = (_selectedCategory != null ? 1 : 0) +
+        (_selectedStatus != null ? 1 : 0);
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: _openFilterBottomSheet,
+        borderRadius: AppRadius.roundedLg,
+        child: Container(
+          height: 48,
+          width: 48,
+          decoration: BoxDecoration(
+            color: hasFilter ? AppColors.primary : AppColors.surface,
+            borderRadius: AppRadius.roundedLg,
+            border: Border.all(
+              color: hasFilter ? AppColors.primary : AppColors.divider,
+              width: 1.0,
+            ),
+            boxShadow: hasFilter
+                ? [
+                    BoxShadow(
+                      color: AppColors.primary.withValues(alpha: 0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : AppElevation.shadowCard,
           ),
-        ),
-
-        const SizedBox(height: AppSpacing.sm),
-
-        // Categories row (dynamic)
-        if (_categories.isNotEmpty || _isLoadingCategories)
-          SizedBox(
-            height: AppSpacing.xl + AppSpacing.xs, // 36.0
-            child: _isLoadingCategories
-                ? const Center(
-                    child: SizedBox(
-                      width: AppIconSize.xs,
-                      height: AppIconSize.xs,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Icon(
+                Icons.tune_rounded,
+                size: 22,
+                color: hasFilter ? Colors.white : AppColors.primary,
+              ),
+              if (hasFilter)
+                Positioned(
+                  top: 5,
+                  right: 5,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      '$filterCount',
+                      style: const TextStyle(
                         color: AppColors.primary,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                        height: 1,
                       ),
                     ),
-                  )
-                : ListView.separated(
-                    scrollDirection: Axis.horizontal,
-                    padding: AppSpacing.horizontalMd,
-                    itemCount: _categories.length + 1,
-                    separatorBuilder: (_, _) => const SizedBox(width: AppSpacing.sm),
-                    itemBuilder: (context, index) {
-                      if (index == 0) {
-                        return _buildChoiceChip(
-                          label: 'Tất cả thể loại',
-                          isSelected: _selectedCategory == null,
-                          isSecondary: true,
-                          onTap: () {
-                            setState(() => _selectedCategory = null);
-                            _triggerSearch();
-                          },
-                        );
-                      }
-                      final cat = _categories[index - 1];
-                      final isSelected = _selectedCategory == cat.name ||
-                          _selectedCategory == cat.slug;
-                      return _buildChoiceChip(
-                        label: cat.name,
-                        isSelected: isSelected,
-                        isSecondary: true,
-                        onTap: () {
-                          setState(() {
-                            _selectedCategory = isSelected ? null : cat.name;
-                          });
-                          _triggerSearch();
-                        },
-                      );
-                    },
                   ),
-          ),
-      ],
-    );
-  }
-
-  Widget _buildChoiceChip({
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-    bool isSecondary = false,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppDurations.fast,
-        curve: AppCurves.standard,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : AppColors.surface,
-          borderRadius: AppRadius.roundedFull,
-          border: Border.all(
-            color: isSelected ? AppColors.primary : AppColors.divider,
-            width: isSelected ? 1.0 : 0.8,
-          ),
-          boxShadow: isSelected ? AppElevation.shadowCard : null,
-        ),
-        child: Center(
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: (isSelected ? AppTypography.button : AppTypography.bodyS).copyWith(
-              color: isSelected ? AppColors.surface : AppColors.textDark,
-              fontSize: 13.0,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              height: 1.0,
-            ),
+                ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildActiveFilterBadges() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.xs,
+        AppSpacing.md,
+        0,
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Đang lọc:',
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  if (_selectedCategory != null) ...[
+                    _buildActiveBadge(
+                      label: 'Thể loại: $_selectedCategory',
+                      onRemove: () {
+                        setState(() => _selectedCategory = null);
+                        _triggerSearch();
+                      },
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
+                  if (_selectedStatus != null) ...[
+                    _buildActiveBadge(
+                      label: _selectedStatus == 'ONGOING'
+                          ? 'Đang ra'
+                          : 'Hoàn thành',
+                      onRemove: () {
+                        setState(() => _selectedStatus = null);
+                        _triggerSearch();
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActiveBadge({
+    required String label,
+    required VoidCallback onRemove,
+  }) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(10, 4, 6, 4),
+      decoration: BoxDecoration(
+        color: AppColors.primary.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.primary.withValues(alpha: 0.35),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.primary,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+          const SizedBox(width: 4),
+          GestureDetector(
+            onTap: onRemove,
+            child: const Icon(
+              Icons.close_rounded,
+              size: 14,
+              color: AppColors.primary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _openFilterBottomSheet() {
+    String? tempStatus = _selectedStatus;
+    String? tempCategory = _selectedCategory;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.of(context).size.height * 0.78,
+              ),
+              decoration: const BoxDecoration(
+                color: AppColors.background,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Drag Handle
+                  Container(
+                    margin: const EdgeInsets.only(top: 10, bottom: 6),
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.divider,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: Row(
+                      children: [
+                        Text('Bộ lọc tìm kiếm', style: AppTypography.h3),
+                        const Spacer(),
+                        if (tempStatus != null || tempCategory != null)
+                          TextButton(
+                            onPressed: () {
+                              setSheetState(() {
+                                tempStatus = null;
+                                tempCategory = null;
+                              });
+                            },
+                            child: Text(
+                              'Đặt lại',
+                              style: AppTypography.button.copyWith(
+                                color: AppColors.primary,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded, size: 20),
+                          onPressed: () => Navigator.of(sheetContext).pop(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(
+                    height: 1,
+                    thickness: 0.8,
+                    color: AppColors.divider,
+                  ),
+
+                  // Scrollable filter content
+                  Expanded(
+                    child: SingleChildScrollView(
+                      padding: AppSpacing.paddingMd,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Status Section
+                          Text(
+                            'TRẠNG THÁI TRUYỆN',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              _buildSheetChip(
+                                label: 'Tất cả trạng thái',
+                                isSelected: tempStatus == null,
+                                onTap: () =>
+                                    setSheetState(() => tempStatus = null),
+                              ),
+                              _buildSheetChip(
+                                label: 'Đang ra',
+                                isSelected: tempStatus == 'ONGOING',
+                                onTap: () => setSheetState(
+                                  () => tempStatus =
+                                      tempStatus == 'ONGOING' ? null : 'ONGOING',
+                                ),
+                              ),
+                              _buildSheetChip(
+                                label: 'Hoàn thành',
+                                isSelected: tempStatus == 'COMPLETED',
+                                onTap: () => setSheetState(
+                                  () => tempStatus = tempStatus == 'COMPLETED'
+                                      ? null
+                                      : 'COMPLETED',
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: AppSpacing.lg),
+
+                          // Category Section
+                          Text(
+                            'THỂ LOẠI',
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          if (_categories.isEmpty && _isLoadingCategories)
+                            const Center(
+                              child: Padding(
+                                padding: EdgeInsets.all(16.0),
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            )
+                          else
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                _buildSheetChip(
+                                  label: 'Tất cả thể loại',
+                                  isSelected: tempCategory == null,
+                                  onTap: () =>
+                                      setSheetState(() => tempCategory = null),
+                                ),
+                                ..._categories.map((cat) {
+                                  final isSelected = tempCategory == cat.name ||
+                                      tempCategory == cat.slug;
+                                  return _buildSheetChip(
+                                    label: cat.name,
+                                    isSelected: isSelected,
+                                    onTap: () => setSheetState(
+                                      () => tempCategory =
+                                          isSelected ? null : cat.name,
+                                    ),
+                                  );
+                                }),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // Bottom Apply Button
+                  SafeArea(
+                    child: Padding(
+                      padding: AppSpacing.paddingMd,
+                      child: SizedBox(
+                        width: double.infinity,
+                        height: 46,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              _selectedStatus = tempStatus;
+                              _selectedCategory = tempCategory;
+                            });
+                            Navigator.of(sheetContext).pop();
+                            _triggerSearch();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: AppRadius.roundedMd,
+                            ),
+                          ),
+                          child: const Text(
+                            'Áp dụng bộ lọc',
+                            style: TextStyle(
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildSheetChip({
+    required String label,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppDurations.fast,
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : AppColors.surface,
+          borderRadius: AppRadius.roundedMd,
+          border: Border.all(
+            color: isSelected ? AppColors.primary : AppColors.divider,
+            width: 0.8,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.25),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : AppElevation.shadowCard,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+            color: isSelected ? Colors.white : AppColors.textDark,
+          ),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildResultsHeader(int count) {
     return Padding(
@@ -497,27 +778,12 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: SizedBox(
                       width: AppSpacing.xl3 + AppSpacing.xl, // 80.0
                       height: AppSpacing.xl4 + AppSpacing.xl2, // 104.0
-                      child: novel.coverImageUrl.isNotEmpty
-                          ? CachedNetworkImage(
-                              imageUrl: novel.coverImageUrl,
-                              fit: BoxFit.cover,
-                              errorWidget: (_, _, _) => Container(
-                                color: AppColors.background,
-                                child: const Icon(
-                                  Icons.menu_book_rounded,
-                                  color: AppColors.disabled,
-                                  size: AppIconSize.lg,
-                                ),
-                              ),
-                            )
-                          : Container(
-                              color: AppColors.background,
-                              child: const Icon(
-                                Icons.menu_book_rounded,
-                                color: AppColors.disabled,
-                                size: AppIconSize.lg,
-                              ),
-                            ),
+                      child: AppNetworkImage(
+                        imageUrl: novel.coverImageUrl,
+                        fit: BoxFit.cover,
+                        memCacheWidth: 200,
+                        memCacheHeight: 260,
+                      ),
                     ),
                   ),
 
@@ -732,31 +998,36 @@ class _SearchScreenState extends State<SearchScreen> {
             boxShadow: AppElevation.shadowCard,
             border: Border.all(color: AppColors.error, width: 1.0),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: AppColors.error,
-                size: AppIconSize.xl,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Đã xảy ra lỗi khi tìm kiếm',
-                style: AppTypography.h3,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: AppTypography.caption.copyWith(color: AppColors.error),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton(
-                onPressed: _triggerSearch,
-                child: const Text('Thử lại'),
-              ),
-            ],
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.error,
+                  size: AppIconSize.xl,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Đã xảy ra lỗi khi tìm kiếm',
+                  style: AppTypography.h3,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(color: AppColors.error),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ElevatedButton(
+                  onPressed: _triggerSearch,
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

@@ -44,6 +44,8 @@ dependencies:
   intl: ^0.20.3
   equatable: ^3.0.0
   device_preview_plus: ^2.5.5
+  audioplayers: ^6.8.1
+  flutter_tts: ^4.2.5
 
 dev_dependencies:
   flutter_test:

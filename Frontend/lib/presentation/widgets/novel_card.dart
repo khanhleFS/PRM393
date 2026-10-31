@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'app_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/constants/app_colors.dart';
@@ -43,44 +43,12 @@ class NovelCard extends StatelessWidget {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    novel.coverImageUrl.isNotEmpty
-                        ? CachedNetworkImage(
-                            imageUrl: novel.coverImageUrl,
-                            fit: BoxFit.cover,
-                            placeholder: (context, url) => Container(
-                              color: AppColors.background.withValues(alpha: 0.5),
-                              child: const Center(
-                                child: SizedBox(
-                                  width: AppIconSize.md,
-                                  height: AppIconSize.md,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            errorWidget: (context, url, error) => Container(
-                              color: AppColors.background.withValues(alpha: 0.7),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.auto_stories_outlined,
-                                  size: AppIconSize.xl,
-                                  color: AppColors.disabled,
-                                ),
-                              ),
-                            ),
-                          )
-                        : Container(
-                            color: AppColors.background.withValues(alpha: 0.7),
-                            child: const Center(
-                              child: Icon(
-                                Icons.auto_stories_outlined,
-                                size: AppIconSize.xl,
-                                color: AppColors.disabled,
-                              ),
-                            ),
-                          ),
+                    AppNetworkImage(
+                      imageUrl: novel.coverImageUrl,
+                      fit: BoxFit.cover,
+                      memCacheWidth: 350,
+                      memCacheHeight: 500,
+                    ),
                     // Gradient Overlay for Text Readability
                     Positioned(
                       bottom: 0,

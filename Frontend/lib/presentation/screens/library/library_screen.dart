@@ -1,4 +1,4 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import '../../widgets/app_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../bloc/auth/auth_bloc.dart';
@@ -240,44 +240,12 @@ class _LibraryScreenState extends State<LibraryScreen> {
                 child: SizedBox(
                   width: AppSpacing.xl3 + AppSpacing.lg, // 72.0
                   height: AppSpacing.xl4 + AppSpacing.xl2, // 104.0
-                  child: item.coverImageUrl.isNotEmpty
-                      ? CachedNetworkImage(
-                          imageUrl: item.coverImageUrl,
-                          fit: BoxFit.cover,
-                          placeholder: (_, _) => Container(
-                            color: AppColors.background.withValues(alpha: 0.5),
-                            child: const Center(
-                              child: SizedBox(
-                                width: AppIconSize.sm,
-                                height: AppIconSize.sm,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ),
-                          ),
-                          errorWidget: (_, _, _) => Container(
-                            color: AppColors.background,
-                            child: const Center(
-                              child: Icon(
-                                Icons.auto_stories_outlined,
-                                color: AppColors.disabled,
-                                size: AppIconSize.lg,
-                              ),
-                            ),
-                          ),
-                        )
-                      : Container(
-                          color: AppColors.background,
-                          child: const Center(
-                            child: Icon(
-                              Icons.auto_stories_outlined,
-                              color: AppColors.disabled,
-                              size: AppIconSize.lg,
-                            ),
-                          ),
-                        ),
+                  child: AppNetworkImage(
+                    imageUrl: item.coverImageUrl,
+                    fit: BoxFit.cover,
+                    memCacheWidth: 200,
+                    memCacheHeight: 260,
+                  ),
                 ),
               ),
 
@@ -590,33 +558,38 @@ class _LibraryScreenState extends State<LibraryScreen> {
             boxShadow: AppElevation.shadowCard,
             border: Border.all(color: AppColors.error, width: 0.8),
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.error_outline_rounded,
-                color: AppColors.error,
-                size: AppIconSize.xl,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Không thể tải tủ sách',
-                style: AppTypography.h3,
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: AppTypography.caption.copyWith(color: AppColors.error),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              ElevatedButton(
-                onPressed: () {
-                  context.read<BookmarkBloc>().add(FetchBookmarksEvent());
-                },
-                child: const Text('Thử lại'),
-              ),
-            ],
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.error_outline_rounded,
+                  color: AppColors.error,
+                  size: AppIconSize.xl,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Không thể tải tủ sách',
+                  style: AppTypography.h3,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  message,
+                  textAlign: TextAlign.center,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption.copyWith(color: AppColors.error),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                ElevatedButton(
+                  onPressed: () {
+                    context.read<BookmarkBloc>().add(FetchBookmarksEvent());
+                  },
+                  child: const Text('Thử lại'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

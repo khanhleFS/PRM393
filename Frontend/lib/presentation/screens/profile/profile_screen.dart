@@ -30,17 +30,27 @@ class ProfileScreen extends StatelessWidget {
             TextField(
               controller: controller,
               decoration: const InputDecoration(
-                hintText: 'http://10.0.2.2:8080/api',
+                hintText: ApiEndpoints.defaultAzureBaseUrl,
               ),
             ),
             const SizedBox(height: 12),
             const Text(
-              'Gợi ý:\n• Máy ảo Android Emulator: http://10.0.2.2:8080/api\n• Máy ảo Genymotion: http://10.0.3.2:8080/api\n• Máy thật cắm USB / cùng WiFi: http://<IP_Máy_Tính>:8080/api\n• Trình duyệt Web / Desktop: http://localhost:8080/api',
+              'Gợi ý:\n'
+              '• Server Azure (Mặc định): https://luminovels-prm393-demo.japaneast.cloudapp.azure.com/api\n'
+              '• Web / Desktop (Local): http://localhost:8080/api\n'
+              '• Máy ảo Android Emulator: http://10.0.2.2:8080/api\n'
+              '• Máy thật cắm USB / cùng WiFi: http://<IP_Máy_Tính>:8080/api',
               style: TextStyle(fontSize: 11, color: AppColors.textSecondary, height: 1.4),
             ),
           ],
         ),
         actions: [
+          TextButton(
+            onPressed: () {
+              controller.text = ApiEndpoints.defaultAzureBaseUrl;
+            },
+            child: const Text('Mặc định Azure'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Hủy'),

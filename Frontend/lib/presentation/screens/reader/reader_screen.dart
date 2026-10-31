@@ -15,6 +15,7 @@ import '../../../core/constants/app_tokens.dart';
 import '../../../core/storage/local_storage.dart';
 import '../../../data/models/chapter_model.dart';
 import '../../../data/repositories/chapter_repository.dart';
+import '../../widgets/floating_tts_player.dart';
 import '../auth/login_screen.dart';
 import '../coin/coin_shop_screen.dart';
 
@@ -80,7 +81,11 @@ class _ReaderView extends StatefulWidget {
 
 class _ReaderViewState extends State<_ReaderView> {
   final ScrollController _scrollController = ScrollController();
+  bool _isAudioOpen = false;
   String? _lastSyncedChapterId;
+  int _activeTtsChunkIndex = 0;
+  int? _seekTtsChunkIndex;
+  final Map<int, GlobalKey> _chunkKeys = {};
 
   @override
   void dispose() {
@@ -92,6 +97,20 @@ class _ReaderViewState extends State<_ReaderView> {
     if (_scrollController.hasClients) {
       _scrollController.jumpTo(0);
     }
+  }
+
+  void _scrollToActiveChunk(int index) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final key = _chunkKeys[index];
+      if (key?.currentContext != null) {
+        Scrollable.ensureVisible(
+          key!.currentContext!,
+          duration: const Duration(milliseconds: 350),
+          alignment: 0.35,
+          curve: Curves.easeInOut,
+        );
+      }
+    });
   }
 
   void _showSettingsModal(BuildContext context) {
@@ -131,6 +150,9 @@ class _ReaderViewState extends State<_ReaderView> {
             final currentChapterKey = chapter.id.toString();
             if (_lastSyncedChapterId != currentChapterKey) {
               _lastSyncedChapterId = currentChapterKey;
+              _chunkKeys.clear();
+              _activeTtsChunkIndex = 0;
+              _seekTtsChunkIndex = null;
 
               int? percent;
               final list = state.chaptersList.isNotEmpty
@@ -295,6 +317,30 @@ class _ReaderViewState extends State<_ReaderView> {
                 ),
               ),
               actions: [
+                // Audio Player Toggle Button
+                IconButton(
+                  icon: Icon(
+                    _isAudioOpen ? Icons.headphones_rounded : Icons.headphones_outlined,
+                    color: _isAudioOpen ? AppColors.primary : textColor,
+                  ),
+                  tooltip: 'Phát audio chương truyện (AI TTS)',
+                  onPressed: () {
+                    if (chapter.isLocked) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                            'Vui lòng mở khóa chương truyện để nghe audio.',
+                          ),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                      return;
+                    }
+                    setState(() {
+                      _isAudioOpen = !_isAudioOpen;
+                    });
+                  },
+                ),
                 IconButton(
                   icon: const Icon(Icons.tune_rounded),
                   tooltip: 'Cài đặt giao diện',
@@ -346,13 +392,12 @@ class _ReaderViewState extends State<_ReaderView> {
                             borderColor,
                           ),
                         ] else ...[
-                          // Anti-copy Protected Text
+                          // Anti-copy Protected Text with TTS Reading Highlight
                           SelectionContainer.disabled(
-                            child: Text(
-                              chapter.content?.isNotEmpty ?? false
-                                  ? chapter.content!
-                                  : 'Nội dung chương trống.',
+                            child: _buildChapterContent(
+                              content: chapter.content ?? '',
                               style: readingTextStyle,
+                              textColor: textColor,
                             ),
                           ),
                         ],
@@ -361,6 +406,60 @@ class _ReaderViewState extends State<_ReaderView> {
                     ),
                   ),
                 ),
+
+                // Floating TTS Player (device/browser speech synthesis)
+                if (_isAudioOpen && !chapter.isLocked) ...[
+                  FloatingTtsPlayer(
+                    novelTitle: state.novelTitle,
+                    chapterTitle: chapter.title,
+                    content: chapter.content ?? '',
+                    hasPrevChapter: state.prevChapter != null,
+                    hasNextChapter: state.nextChapter != null,
+                    backgroundColor: cardBg,
+                    textColor: textColor,
+                    borderColor: borderColor,
+                    seekToChunkIndex: _seekTtsChunkIndex,
+                    onChunkChanged: (index) {
+                      setState(() {
+                        _activeTtsChunkIndex = index;
+                      });
+                      _scrollToActiveChunk(index);
+                    },
+                    onPrevChapter: () {
+                      _chunkKeys.clear();
+                      _activeTtsChunkIndex = 0;
+                      _seekTtsChunkIndex = null;
+                      _scrollToTop();
+                      context.read<ReaderBloc>().add(
+                        LoadChapterEvent(
+                          novelId: state.prevChapter!.novelId,
+                          chapterId: state.prevChapter!.id,
+                          novelTitle: state.novelTitle,
+                          chaptersList: state.chaptersList,
+                        ),
+                      );
+                    },
+                    onNextChapter: () {
+                      _chunkKeys.clear();
+                      _activeTtsChunkIndex = 0;
+                      _seekTtsChunkIndex = null;
+                      _scrollToTop();
+                      context.read<ReaderBloc>().add(
+                        LoadChapterEvent(
+                          novelId: state.nextChapter!.novelId,
+                          chapterId: state.nextChapter!.id,
+                          novelTitle: state.novelTitle,
+                          chaptersList: state.chaptersList,
+                        ),
+                      );
+                    },
+                    onClose: () {
+                      setState(() {
+                        _isAudioOpen = false;
+                      });
+                    },
+                  ),
+                ],
 
                 // Bottom Navigation Bar for previous/next chapters
                 Container(
@@ -513,6 +612,90 @@ class _ReaderViewState extends State<_ReaderView> {
       textColor: textColor,
       cardBg: cardBg,
       borderColor: borderColor,
+    );
+  }
+
+  Widget _buildChapterContent({
+    required String content,
+    required TextStyle style,
+    required Color textColor,
+  }) {
+    if (content.trim().isEmpty) {
+      return Text('Nội dung chương trống.', style: style);
+    }
+
+    final chunks = TtsChunkHelper.splitIntoChunks(content);
+    if (chunks.isEmpty) {
+      return Text(content, style: style);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: List.generate(chunks.length, (index) {
+        final chunk = chunks[index];
+        final isHighlighted = _isAudioOpen && index == _activeTtsChunkIndex;
+        final key = _chunkKeys.putIfAbsent(index, () => GlobalKey());
+
+        if (isHighlighted) {
+          return Container(
+            key: key,
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+              border: const Border(
+                left: BorderSide(
+                  color: AppColors.primary,
+                  width: 4,
+                ),
+              ),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 3, right: 8),
+                  child: Icon(
+                    Icons.volume_up_rounded,
+                    size: 16,
+                    color: AppColors.primary,
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    chunk,
+                    style: style.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return InkWell(
+          key: key,
+          onTap: _isAudioOpen
+              ? () {
+                  setState(() {
+                    _activeTtsChunkIndex = index;
+                    _seekTtsChunkIndex = index;
+                  });
+                }
+              : null,
+          borderRadius: BorderRadius.circular(AppRadius.sm),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+            child: Text(
+              chunk,
+              style: style.copyWith(color: textColor),
+            ),
+          ),
+        );
+      }),
     );
   }
 }
