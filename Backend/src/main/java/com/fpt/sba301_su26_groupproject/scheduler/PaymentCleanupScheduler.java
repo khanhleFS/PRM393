@@ -14,6 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.LockModeType;
 
 /**
  * Background job dọn dẹp các Payment/Order bị treo (PENDING quá 30 phút).
@@ -33,6 +35,7 @@ public class PaymentCleanupScheduler {
 
     private final PaymentRepository paymentRepository;
     private final OrderRepository orderRepository;
+    private final EntityManager entityManager;
 
     @Scheduled(cron = "0 */15 * * * *") // Chạy mỗi 15 phút
     @Transactional
@@ -51,6 +54,15 @@ public class PaymentCleanupScheduler {
                 stalePayments.size(), EXPIRY_MINUTES);
 
         for (Payment payment : stalePayments) {
+            // Match webhook lock order and re-read after waiting: a webhook may have
+            // completed this payment since the initial stale-payment scan.
+            if (payment.getOrder() != null) {
+                entityManager.refresh(payment.getOrder(), LockModeType.PESSIMISTIC_WRITE);
+            }
+            entityManager.refresh(payment, LockModeType.PESSIMISTIC_WRITE);
+            if (payment.getStatus() != PaymentStatus.PENDING || !payment.getCreatedAt().isBefore(cutoff)) {
+                continue;
+            }
             payment.setStatus(PaymentStatus.EXPIRED);
             paymentRepository.save(payment);
 

@@ -1,5 +1,9 @@
 .env
 .env.local
+deploy/azure/app.jar
+deploy/azure/downloads/
+deploy/azure/*.tar.gz
+deploy/azure/*.log
 Backend/.env.local
 .idea/caches/deviceStreaming.xml
 .idea/modules.xml

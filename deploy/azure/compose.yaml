@@ -1,0 +1,102 @@
+name: luminovels
+services:
+  db:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    restart: unless-stopped
+    mem_limit: 2300m
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      SQLCMDPASSWORD: ${DB_PASSWORD}
+      MSSQL_MEMORY_LIMIT_MB: "2048"
+    volumes:
+      - sql_data:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -C -b -Q 'SELECT 1' > /dev/null"]
+      start_period: 45s
+      interval: 10s
+      timeout: 5s
+      retries: 20
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  db-init:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SQLCMDPASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-luminovels}
+    volumes:
+      - ./init-db.sql:/init-db.sql:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - 'exec /opt/mssql-tools18/bin/sqlcmd -S db -U sa -C -b -v DB_NAME="$$DB_NAME" -i /init-db.sql'
+    restart: "no"
+    logging: *logging
+
+  redis:
+    image: redis:7.2-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
+    command: ["sh", "-c", 'exec redis-server --appendonly yes --requirepass "$$REDIS_PASSWORD" --maxmemory 64mb --maxmemory-policy noeviction']
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", 'REDISCLI_AUTH="$$REDIS_PASSWORD" redis-cli ping | grep -q PONG']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    logging: *logging
+
+  backend:
+    build: .
+    restart: unless-stopped
+    mem_limit: 640m
+    env_file: .env
+    environment:
+      SPRING_PROFILES_ACTIVE: azure-vm
+      DB_HOST: db
+      DB_USERNAME: sa
+      REDIS_HOST: redis
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx320m -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+UseSerialGC"
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      db-init:
+        condition: service_completed_successfully
+      redis:
+        condition: service_healthy
+    logging: *logging
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    mem_limit: 128m
+    environment:
+      PUBLIC_HOST: ${PUBLIC_HOST:?PUBLIC_HOST is required}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./downloads:/srv/downloads:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+    logging: *logging
+
+volumes:
+  sql_data:
+  redis_data:
+  caddy_data:
+  caddy_config:

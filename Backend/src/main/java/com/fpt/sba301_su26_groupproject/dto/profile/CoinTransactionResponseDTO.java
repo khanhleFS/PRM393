@@ -14,7 +14,7 @@ public record CoinTransactionResponseDTO(
         String userName,
         @Schema(example = "Gói 1000 coin")
         String packageName,
-        @Schema(example = "50000")
+        @Schema(example = "100", description = "Signed coin delta: positive credit, negative debit")
         Integer amount,
         @Schema(example = "TOP_UP")
         String transactionType,
@@ -23,5 +23,8 @@ public record CoinTransactionResponseDTO(
         @Schema(example = "SUCCESS")
         String status,
         @Schema(example = "2026-06-09T08:30:00Z")
-        Instant createdAt
+        Instant createdAt,
+        Integer balanceAfter,
+        String note,
+        UUID refId
 ) {}
