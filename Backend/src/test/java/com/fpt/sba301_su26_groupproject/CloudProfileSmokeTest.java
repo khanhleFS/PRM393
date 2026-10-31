@@ -146,6 +146,25 @@ class CloudProfileSmokeTest {
     }
 
     @Test
+    void generatesOpenApiAndKeepsApplicationJsonEndpointsWorking() throws Exception {
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            var schema = client.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + "/v3/api-docs"))
+                    .GET().build(), HttpResponse.BodyHandlers.ofString());
+            assertEquals(200, schema.statusCode(), schema.body());
+            var json = new com.fasterxml.jackson.databind.ObjectMapper().readTree(schema.body());
+            assertTrue(json.path("openapi").asText().startsWith("3."));
+            assertTrue(json.path("paths").has("/api/orders"));
+            assertTrue(json.path("paths").has("/api/payments/sepay/test/webhook"));
+            for (String path : new String[]{"/api/app/config", "/api/novels?size=1"}) {
+                var response = client.send(HttpRequest.newBuilder(URI.create("http://localhost:" + port + path))
+                        .GET().build(), HttpResponse.BodyHandlers.ofString());
+                assertEquals(200, response.statusCode(), response.body());
+                assertEquals(200, new com.fasterxml.jackson.databind.ObjectMapper().readTree(response.body()).path("code").asInt());
+            }
+        }
+    }
+
+    @Test
     void cloudStartsWithoutDestructiveSeedAndExposesUnauthenticatedLiveness() throws Exception {
         assertInstanceOf(ResendMailService.class, mail);
         assertEquals("never", environment.getProperty("spring.sql.init.mode"));

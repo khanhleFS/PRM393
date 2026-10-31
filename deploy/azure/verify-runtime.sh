@@ -14,6 +14,14 @@ for attempt in $(seq 1 30); do
   sleep 1
 done
 test "$ready" = true
+# Exercise lazy schema generation before checking APIs: static liveness/HTML alone
+# missed Metaspace exhaustion while Springdoc was loading its additional classes.
+curl --fail --silent --show-error --max-time 60 http://127.0.0.1:8080/v3/api-docs |
+  python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["openapi"].startswith("3."); assert "/api/orders" in d["paths"]; print("OpenAPI schema OK:", len(d["paths"]), "paths")'
+curl --fail --silent --show-error --max-time 15 http://127.0.0.1:8080/api/app/config |
+  python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["code"]==200; assert "downloadUrl" in d["result"]; print("App configuration JSON OK")'
+curl --fail --silent --show-error --max-time 15 'http://127.0.0.1:8080/api/novels?size=1' |
+  python3 -c 'import json,sys; d=json.load(sys.stdin); assert d["code"]==200; assert isinstance(d["result"]["content"],list); print("Library SQL read OK:",d["result"]["totalElements"],"novels")'
 code=$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 5 http://127.0.0.1:8080/api/coin-packages)
 printf 'Protected coin packages endpoint without login: HTTP %s\n' "$code"
 test "$code" = 401

@@ -1,5 +1,19 @@
 # Luminovels — Azure VM
 
+## Sửa lỗi Swagger và API trả 500 do Metaspace ngày 31 tháng 10 năm 2026
+
+Log thực tế ghi `OutOfMemoryError: Metaspace` trong khi SQL/Redis vẫn healthy và
+endpoint liveness rẻ vẫn trả UP. Giới hạn 128 MiB quá chật khi Springdoc sinh schema.
+Đã tăng MaxMetaspaceSize lên 256 MiB và container backend lên 896 MiB, giữ heap 320 MiB,
+code cache 64 MiB, thêm ExitOnOutOfMemoryError để JVM lỗi có thể được restart policy phục hồi.
+
+`verify-runtime.sh` nay thực sự tải và parse `/v3/api-docs`, sau đó kiểm tra JSON cấu hình
+app, truy vấn thư viện và API được bảo vệ; không chỉ kiểm tra HTML Swagger hoặc liveness.
+Đã warm schema 60 paths và kiểm tra liên tiếp 5 vòng schema/config/library trên HTTPS.
+Smoke test H2 bổ sung kiểm tra sinh OpenAPI và các endpoint JSON sau đó, đạt 5 test.
+`.gitattributes` giữ script bash ở LF để không lỗi `pipefail\r` sau checkout trên Windows.
+Không thay đổi schema hay dữ liệu ví trong lần sửa cấu hình này; không cần APK mới.
+
 ## Lịch sử ví và thư viện mẫu
 
 - APK có Lịch sử giao dịch ở Tài khoản và icon trên Nạp xu: số xu có dấu +/−,

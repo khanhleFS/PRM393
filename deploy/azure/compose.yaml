@@ -59,14 +59,16 @@ services:
   backend:
     build: .
     restart: unless-stopped
-    mem_limit: 640m
+    mem_limit: 896m
     env_file: .env
     environment:
       SPRING_PROFILES_ACTIVE: azure-vm
       DB_HOST: db
       DB_USERNAME: sa
       REDIS_HOST: redis
-      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx320m -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+UseSerialGC"
+      # OpenAPI generation loads additional classes after startup. Leave native-memory
+      # headroom and exit on OOM so restart policy can recover a failed JVM.
+      JAVA_TOOL_OPTIONS: "-Xms64m -Xmx320m -XX:MaxMetaspaceSize=256m -XX:ReservedCodeCacheSize=64m -XX:+UseSerialGC -XX:+ExitOnOutOfMemoryError"
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
