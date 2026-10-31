@@ -26,5 +26,7 @@ public record OrderResponseDTO(
     String deeplink,
 
     @Schema(description = "URL mã QR thanh toán MoMo")
-    String qrCodeUrl
+    String qrCodeUrl,
+    String paymentProvider,
+    String paymentCode
 ) {}

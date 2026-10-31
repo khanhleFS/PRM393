@@ -9,7 +9,14 @@ class ApiEndpoints {
   static const String defaultAndroidBaseUrl = 'http://10.0.2.2:8080/api';
   static const String defaultDesktopBaseUrl = 'http://localhost:8080/api';
 
-  static String _baseUrl = kIsWeb ? defaultDesktopBaseUrl : defaultAndroidBaseUrl;
+  static const String _buildTimeBaseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+  );
+  static String get _defaultBaseUrl => _buildTimeBaseUrl.isNotEmpty
+      ? _buildTimeBaseUrl
+      : (kIsWeb ? defaultDesktopBaseUrl : defaultAndroidBaseUrl);
+
+  static String _baseUrl = _defaultBaseUrl;
 
   static String get baseUrl => _baseUrl;
 
@@ -18,8 +25,8 @@ class ApiEndpoints {
     final customUrl = prefs.getString('custom_api_base_url');
     if (customUrl != null && customUrl.isNotEmpty) {
       _baseUrl = customUrl;
-    } else if (kIsWeb) {
-      _baseUrl = defaultDesktopBaseUrl;
+    } else {
+      _baseUrl = _defaultBaseUrl;
     }
   }
 
@@ -41,7 +48,8 @@ class ApiEndpoints {
   // Novels endpoints
   static String get novels => '$_baseUrl/novels';
   static String novelDetail(dynamic id) => '$_baseUrl/novels/$id';
-  static String novelChapters(dynamic novelId) => '$_baseUrl/novels/$novelId/chapters';
+  static String novelChapters(dynamic novelId) =>
+      '$_baseUrl/novels/$novelId/chapters';
   static String chapterDetail(dynamic novelId, dynamic chapterId) =>
       '$_baseUrl/novels/$novelId/chapters/$chapterId';
   static String readChapter(dynamic novelId, dynamic chapterId) =>
@@ -54,7 +62,8 @@ class ApiEndpoints {
 
   // Bookmarks
   static String get bookmarks => '$_baseUrl/bookmarks';
-  static String bookmarkByNovel(dynamic novelId) => '$_baseUrl/bookmarks/$novelId';
+  static String bookmarkByNovel(dynamic novelId) =>
+      '$_baseUrl/bookmarks/$novelId';
 
   // Profile & Coin
   static String get profile => '$_baseUrl/profile';

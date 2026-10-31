@@ -89,6 +89,9 @@ public class ProfileServiceImpl implements ProfileService {
                             .paymentMethod(paymentMethod)
                             .status("SUCCESS")
                             .createdAt(tx.getCreatedAt())
+                            .balanceAfter(tx.getBalanceAfter())
+                            .note(tx.getNote())
+                            .refId(tx.getRefId())
                             .build();
                 });
     }

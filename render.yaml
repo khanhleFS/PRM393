@@ -1,0 +1,55 @@
+services:
+  - type: web
+    name: luminovels-api
+    runtime: docker
+    plan: free
+    region: singapore
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: ./Backend
+    healthCheckPath: /api/app/health
+    autoDeployTrigger: "off"
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: JAVA_TOOL_OPTIONS
+        value: "-Xms64m -Xmx256m -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=32m -XX:+UseSerialGC"
+      - key: JPA_DDL_AUTO
+        value: validate
+      - key: DB_HOST
+        sync: false
+      - key: DB_NAME
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: REDIS_HOST
+        sync: false
+      - key: REDIS_PORT
+        value: "6379"
+      - key: REDIS_PASSWORD
+        sync: false
+      - key: MAIL_PROVIDER
+        value: resend
+      - key: RESEND_API_KEY
+        sync: false
+      - key: MAIL_FROM
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: GOOGLE_API_KEY
+        sync: false
+      - key: DEV_MOMO_ENDPOINT
+        value: https://test-payment.momo.vn/v2/gateway/api
+      - key: DEV_ACCESS_KEY
+        sync: false
+      - key: DEV_PARTNER_CODE
+        sync: false
+      - key: DEV_SECRET_KEY
+        sync: false
