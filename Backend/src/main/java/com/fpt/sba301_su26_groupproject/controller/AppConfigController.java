@@ -15,6 +15,12 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(name = "App Config APIs", description = "APIs for Mobile App configuration and version check")
 public class AppConfigController {
 
+    // Liveness only: frequent platform probes must not wake Azure SQL or consume Redis commands.
+    @GetMapping("/health")
+    public java.util.Map<String, String> health() {
+        return java.util.Map.of("status", "UP");
+    }
+
     @Value("${app.mobile.latest-version:1.0.0}")
     private String latestVersion;
 

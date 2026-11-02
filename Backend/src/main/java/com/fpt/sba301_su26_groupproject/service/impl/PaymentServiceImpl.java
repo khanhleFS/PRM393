@@ -62,6 +62,17 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     @Transactional
     public PaymentMomoCreateResponseDTO createMomoPayment(PaymentMomoCreateRequestDTO request) {
+        String redirectUrl = momoConfig.getRedirectUrl();
+        if (request.redirectUrl() != null && !request.redirectUrl().isBlank()) {
+            redirectUrl = request.redirectUrl();
+        } else if ("MOBILE".equalsIgnoreCase(request.platform())) {
+            String mobileRedirect = momoConfig.getMobileRedirectUrl();
+            if (mobileRedirect != null && !mobileRedirect.isBlank()) {
+                redirectUrl = mobileRedirect;
+            }
+        }
+        validatePaymentUrls(redirectUrl, momoConfig.getIpnUrl());
+
         Order order = orderRepository.findById(UUID.fromString(request.orderId()))
                 .orElseThrow(() -> new ApiException(CommonErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy đơn hàng"));
 
@@ -90,16 +101,6 @@ public class PaymentServiceImpl implements PaymentService {
 
         String requestType = request.requestType() != null ? request.requestType() : "captureWallet";
 
-        String redirectUrl = momoConfig.getRedirectUrl();
-        if (request.redirectUrl() != null && !request.redirectUrl().isBlank()) {
-            redirectUrl = request.redirectUrl();
-        } else if ("MOBILE".equalsIgnoreCase(request.platform())) {
-            String mobileRedirect = momoConfig.getMobileRedirectUrl();
-            if (mobileRedirect != null && !mobileRedirect.isBlank()) {
-                redirectUrl = mobileRedirect;
-            }
-        }
-
         String signature = MomoCryptoUtil.hmacSHA256(buildCreateSignatureRaw(
                 requestId, requestId, request.amount(), orderInfo, requestType, redirectUrl), momoConfig.getSecretKey());
 
@@ -121,7 +122,9 @@ public class PaymentServiceImpl implements PaymentService {
         String resultCode = String.valueOf(response.getOrDefault("resultCode", ""));
         if (!"0".equals(resultCode)) {
             String message = String.valueOf(response.getOrDefault("message", "MoMo create payment failed"));
-            throw new ApiException(CommonErrorCode.EXTERNAL_SERVICE_ERROR, message);
+            log.warn("[Payment] MoMo create rejected: resultCode={}, requestId={}", resultCode, requestId);
+            throw new ApiException(CommonErrorCode.EXTERNAL_SERVICE_ERROR,
+                    "MoMo resultCode=" + resultCode + ": " + message);
         }
 
         String payUrl = String.valueOf(response.get("payUrl"));
@@ -294,6 +297,26 @@ public class PaymentServiceImpl implements PaymentService {
                 + "&redirectUrl=" + redirectUrl
                 + "&requestId=" + requestId
                 + "&requestType=" + requestType;
+    }
+
+    private void validatePaymentUrls(String redirectUrl, String ipnUrl) {
+        if (redirectUrl == null || redirectUrl.isBlank()) {
+            throw new ApiException(CommonErrorCode.SERVICE_UNAVAILABLE,
+                    "MoMo redirect URL is not configured. Set DEV_MOMO_REDIRECT_URL after deployment.");
+        }
+        try {
+            URI redirect = URI.create(redirectUrl);
+            URI ipn = URI.create(ipnUrl == null ? "" : ipnUrl);
+            if (!redirect.isAbsolute() || !"https".equalsIgnoreCase(ipn.getScheme())
+                    || ipn.getHost() == null || ipn.getUserInfo() != null || ipn.getFragment() != null
+                    || "localhost".equalsIgnoreCase(ipn.getHost()) || "127.0.0.1".equals(ipn.getHost())
+                    || "[::1]".equals(ipn.getHost())) {
+                throw new IllegalArgumentException("Invalid callback URL");
+            }
+        } catch (IllegalArgumentException ex) {
+            throw new ApiException(CommonErrorCode.SERVICE_UNAVAILABLE,
+                    "MoMo needs an absolute redirect URL and a public HTTPS DEV_MOMO_IPN_URL ending in /api/orders/momo/callback.");
+        }
     }
 
     private Map<String, Object> callMoMoApi(String endpoint, Map<String, Object> payload) {

@@ -57,7 +57,8 @@ class ApiEndpoints {
   // Novels endpoints
   static String get novels => '$baseUrl/novels';
   static String novelDetail(dynamic id) => '$baseUrl/novels/$id';
-  static String novelChapters(dynamic novelId) => '$baseUrl/novels/$novelId/chapters';
+  static String novelChapters(dynamic novelId) =>
+      '$baseUrl/novels/$novelId/chapters';
   static String chapterDetail(dynamic novelId, dynamic chapterId) =>
       '$baseUrl/novels/$novelId/chapters/$chapterId';
   static String readChapter(dynamic novelId, dynamic chapterId) =>
@@ -72,7 +73,8 @@ class ApiEndpoints {
 
   // Bookmarks
   static String get bookmarks => '$baseUrl/bookmarks';
-  static String bookmarkByNovel(dynamic novelId) => '$baseUrl/bookmarks/$novelId';
+  static String bookmarkByNovel(dynamic novelId) =>
+      '$baseUrl/bookmarks/$novelId';
 
   // Profile & Coin
   static String get profile => '$baseUrl/profile';

@@ -36,6 +36,9 @@ public class OrderServiceImpl implements OrderService {
     private final UserRepository userRepository;
     private final CoinPackageRepository coinPackageRepository;
     private final PaymentService paymentService;
+    private final SepayPaymentService sepayPaymentService;
+    @org.springframework.beans.factory.annotation.Value("${app.payment.provider:momo}")
+    private String paymentProvider;
 
     @Override
     @Transactional
@@ -65,6 +68,10 @@ public class OrderServiceImpl implements OrderService {
                 .build();
 
         Order saved = orderRepository.save(order);
+        if ("sepay".equalsIgnoreCase(paymentProvider)) {
+            String qr = sepayPaymentService.createQr(saved);
+            return mapToResponse(saved, qr, null, qr);
+        }
 
         String orderInfo = request.orderInfo() == null || request.orderInfo().isBlank()
                 ? "Nap " + totalCoins + " Coins cho tai khoan"
@@ -91,6 +98,7 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponseDTO getOrderById(UUID id) {
         Order order = orderRepository.findById(id)
                 .orElseThrow(() -> new ApiException(CommonErrorCode.RESOURCE_NOT_FOUND, "Không tìm thấy đơn hàng"));
+        requireOwner(order);
         return mapToResponse(order, null, null, null);
     }
 
@@ -113,6 +121,12 @@ public class OrderServiceImpl implements OrderService {
     @Override
     @Transactional
     public void syncPaymentStatus(UUID orderId) {
+        Order order = orderRepository.findById(orderId).orElseThrow(
+                () -> new ApiException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        requireOwner(order);
+        if ("sepay".equalsIgnoreCase(paymentProvider)) {
+            throw new ApiException(CommonErrorCode.BAD_REQUEST, "SePay Test Mode is confirmed through its signed webhook.");
+        }
         paymentService.syncPaymentStatus(orderId);
     }
 
@@ -135,6 +149,11 @@ public class OrderServiceImpl implements OrderService {
 
         if (order.getStatus() != OrderStatus.PENDING) {
             throw new ApiException(CommonErrorCode.BAD_REQUEST, "Đơn hàng đã được xử lý hoặc đã hủy");
+        }
+        requireOwner(order);
+        if ("sepay".equalsIgnoreCase(paymentProvider)) {
+            String qr = sepayPaymentService.createQr(order);
+            return mapToResponse(order, qr, null, qr);
         }
 
         String orderInfo = "Nap " + order.getCoins() + " Coins cho tai khoan";
@@ -169,6 +188,15 @@ public class OrderServiceImpl implements OrderService {
                 .payUrl(payUrl)
                 .deeplink(deeplink)
                 .qrCodeUrl(qrCodeUrl)
+                .paymentProvider("sepay".equalsIgnoreCase(paymentProvider) ? "SEPAY_TEST" : "MOMO")
+                .paymentCode("sepay".equalsIgnoreCase(paymentProvider) ? SepayPaymentService.paymentCode(order.getId()) : null)
                 .build();
+    }
+
+    private void requireOwner(Order order) {
+        UUID userId = com.fpt.sba301_su26_groupproject.common.util.SecurityUtils.getCurrentUserId();
+        if (userId == null || !order.getUser().getId().equals(userId)) {
+            throw new ApiException(CommonErrorCode.FORBIDDEN);
+        }
     }
 }

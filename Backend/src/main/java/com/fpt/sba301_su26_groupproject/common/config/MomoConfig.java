@@ -21,7 +21,7 @@ public class MomoConfig {
     @Value("${momo.dev.redirect-url:http://localhost:8080/swagger-ui.html}")
     private String redirectUrl;
 
-    @Value("${momo.mobile.redirect-url:novelapp://payment/callback}")
+    @Value("${momo.mobile.redirect-url:}")
     private String mobileRedirectUrl;
 
     @Value("${momo.dev.ipn-url:http://localhost:8080/api/orders/momo/callback}")

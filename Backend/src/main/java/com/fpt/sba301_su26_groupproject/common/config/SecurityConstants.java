@@ -7,6 +7,8 @@ public class SecurityConstants {
             "/v3/api-docs/**",
             "/v3/api-docs.yaml",
             "/api/orders/momo/callback",
+            "/api/payments/sepay/test/webhook",
+            "/payment-result.html",
             "/api/auth/**",
             "/api/enums",
             "/api/categories",

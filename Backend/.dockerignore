@@ -4,3 +4,8 @@ target/
 .idea/
 .vscode/
 *.iml
+.env
+.env.*
+AI_History/
+scripts/
+*.md

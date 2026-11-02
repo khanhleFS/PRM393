@@ -28,7 +28,7 @@ class CoinTransactionModel {
   final String id;
   final String type;
   final int amount;
-  final int balanceAfter;
+  final int? balanceAfter;
   final String? note;
   final String createdAt;
 
@@ -43,11 +43,11 @@ class CoinTransactionModel {
 
   factory CoinTransactionModel.fromJson(Map<String, dynamic> json) {
     return CoinTransactionModel(
-      id: json['id']?.toString() ?? '',
-      type: json['type']?.toString() ?? '',
+      id: (json['transactionId'] ?? json['id'])?.toString() ?? '',
+      type: (json['transactionType'] ?? json['type'])?.toString() ?? '',
       amount: (json['amount'] as num?)?.toInt() ?? 0,
-      balanceAfter: (json['balanceAfter'] as num?)?.toInt() ?? 0,
-      note: json['note']?.toString(),
+      balanceAfter: (json['balanceAfter'] as num?)?.toInt(),
+      note: (json['note'] ?? json['packageName'])?.toString(),
       createdAt: json['createdAt']?.toString() ?? '',
     );
   }
