@@ -13,29 +13,15 @@ class ApiEndpoints {
 
   static String _baseUrl = defaultAzureBaseUrl;
 
-  static String get baseUrl {
-    if (_baseUrl.contains('localhost') ||
-        _baseUrl.contains('127.0.0.1') ||
-        _baseUrl.contains('10.0.2.2')) {
-      _baseUrl = defaultAzureBaseUrl;
-    }
-    return _baseUrl;
-  }
+  static String get baseUrl => _baseUrl;
 
   static Future<void> init() async {
     final prefs = await SharedPreferences.getInstance();
     final customUrl = prefs.getString('custom_api_base_url');
-    if (customUrl != null &&
-        customUrl.isNotEmpty &&
-        !customUrl.contains('localhost') &&
-        !customUrl.contains('127.0.0.1') &&
-        !customUrl.contains('10.0.2.2')) {
+    if (customUrl != null && customUrl.isNotEmpty) {
       _baseUrl = customUrl;
     } else {
       _baseUrl = defaultAzureBaseUrl;
-      if (customUrl != null) {
-        await prefs.remove('custom_api_base_url');
-      }
     }
   }
 
@@ -80,4 +66,12 @@ class ApiEndpoints {
   static String get profile => '$baseUrl/profile';
   static String get coinPackages => '$baseUrl/coin-packages';
   static String get coinTransactions => '$baseUrl/profile/transactions';
+
+  // Author endpoints
+  static String get authorNovels => '$baseUrl/author/novels';
+  static String authorNovelDetail(dynamic id) => '$baseUrl/author/novels/$id';
+  static String authorNovelChapters(dynamic novelId) =>
+      '$baseUrl/author/novels/$novelId/chapters';
+  static String authorChapterDetail(dynamic novelId, dynamic chapterId) =>
+      '$baseUrl/author/novels/$novelId/chapters/$chapterId';
 }

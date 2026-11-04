@@ -11,6 +11,7 @@ import '../../../bloc/novel/novel_state.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/theme/app_tokens.dart';
 import '../../../data/models/novel_model.dart';
+import '../../widgets/app_logo.dart';
 import '../../widgets/app_network_image.dart';
 import '../../widgets/coin_badge.dart';
 import '../../widgets/novel_card.dart';
@@ -32,17 +33,9 @@ class HomeScreen extends StatelessWidget {
         titleSpacing: AppSpacing.md,
         title: Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: AppColors.primary,
-                borderRadius: AppRadius.roundedMd,
-              ),
-              child: const Icon(
-                Icons.auto_stories,
-                size: AppIconSize.sm,
-                color: AppColors.surface,
-              ),
+            const AppLogo(
+              size: 32,
+              borderRadius: BorderRadius.all(Radius.circular(8)),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text('Luminovels', style: AppTypography.h2),

@@ -53,7 +53,20 @@ class AuthRepository {
       );
 
       if (apiRes.isSuccess && apiRes.result != null) {
-        final user = UserModel.fromJson(apiRes.result!);
+        final raw = Map<String, dynamic>.from(apiRes.result!);
+        final saved = LocalStorage.getUserInfo();
+        if (saved != null) {
+          if (!raw.containsKey('role') && saved.containsKey('role')) {
+            raw['role'] = saved['role'];
+          }
+          if (!raw.containsKey('isAuthor') && saved.containsKey('isAuthor')) {
+            raw['isAuthor'] = saved['isAuthor'];
+          }
+          if (!raw.containsKey('userId') && saved.containsKey('userId')) {
+            raw['userId'] = saved['userId'];
+          }
+        }
+        final user = UserModel.fromJson(raw);
         await LocalStorage.updateUserCoins(user.coinBalance);
         await LocalStorage.saveUserInfo(user.toJson());
         return user;

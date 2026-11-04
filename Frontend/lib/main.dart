@@ -16,6 +16,7 @@ import 'data/repositories/auth_repository.dart';
 import 'data/repositories/bookmark_repository.dart';
 import 'data/repositories/chapter_repository.dart';
 import 'data/repositories/coin_repository.dart';
+import 'data/repositories/author_repository.dart';
 import 'data/repositories/novel_repository.dart';
 import 'presentation/screens/splash/splash_screen.dart';
 
@@ -49,6 +50,7 @@ class MyApp extends StatelessWidget {
         RepositoryProvider(create: (_) => ChapterRepository()),
         RepositoryProvider(create: (_) => BookmarkRepository()),
         RepositoryProvider(create: (_) => CoinRepository()),
+        RepositoryProvider(create: (_) => AuthorRepository()),
       ],
       child: MultiBlocProvider(
         providers: [

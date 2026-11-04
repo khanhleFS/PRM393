@@ -6,6 +6,7 @@ import '../../../bloc/auth/auth_event.dart';
 import '../../../bloc/auth/auth_state.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_tokens.dart';
+import '../../widgets/app_logo.dart';
 import 'otp_verification_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -99,7 +100,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('Tạo tài khoản mới', style: AppTypography.h1),
+                      const Center(
+                        child: AppLogo(
+                          size: 72,
+                          borderRadius: BorderRadius.all(Radius.circular(18)),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      Text('Tạo tài khoản mới', style: AppTypography.h1, textAlign: TextAlign.center),
                       const SizedBox(height: AppSpacing.sm),
                       const Text(
                         'Khám phá kho tiểu thuyết bản quyền và tính năng đọc truyện bảo mật',

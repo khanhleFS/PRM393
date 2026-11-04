@@ -6,6 +6,7 @@ import '../../../bloc/auth/auth_event.dart';
 import '../../../bloc/auth/auth_state.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_tokens.dart';
+import '../../widgets/app_logo.dart';
 import '../main_nav_screen.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -45,20 +46,18 @@ class _SplashScreenState extends State<SplashScreen> {
                 width: 104,
                 height: 104,
                 decoration: BoxDecoration(
-                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primary.withValues(alpha: 0.3),
+                      color: AppColors.primary.withValues(alpha: 0.25),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: const Icon(
-                  Icons.auto_stories,
-                  size: 54,
-                  color: AppColors.surface,
+                child: const AppLogo(
+                  size: 104,
+                  borderRadius: BorderRadius.all(Radius.circular(24)),
                 ),
               ),
               const SizedBox(height: 24),

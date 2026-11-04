@@ -11,6 +11,7 @@ import '../../../core/constants/app_tokens.dart';
 import 'package:intl/intl.dart';
 
 import '../auth/login_screen.dart';
+import '../author/author_novels_screen.dart';
 import '../coin/coin_shop_screen.dart';
 import '../coin/coin_history_screen.dart';
 
@@ -174,6 +175,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
+                  ListTile(
+                    tileColor: AppColors.surface,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+                      child: const Icon(
+                        Icons.edit_note_rounded,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    title: const Text(
+                      'Studio Tác giả & Sáng tác',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: const Text('Viết truyện mới, quản lý tác phẩm & xuất bản chương'),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => const AuthorNovelsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   // Settings Header
                   const Text(
                     'Cài đặt & Kết nối',
