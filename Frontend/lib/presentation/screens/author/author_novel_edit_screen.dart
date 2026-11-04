@@ -138,7 +138,7 @@ class _AuthorNovelEditScreenState extends State<AuthorNovelEditScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(_isEditing ? 'Chỉnh sửa tác phẩm' : 'Sáng tác tác phẩm mới'),
+        title: Text(_isEditing ? 'Chỉnh sửa tác phẩm' : 'Thêm tác phẩm mới'),
         backgroundColor: AppColors.background,
         elevation: AppElevation.none,
       ),

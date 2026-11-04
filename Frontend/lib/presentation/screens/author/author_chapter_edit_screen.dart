@@ -296,15 +296,15 @@ class _AuthorChapterEditScreenState extends State<AuthorChapterEditScreen> {
               ),
               const SizedBox(height: AppSpacing.xs),
               // Preset giá xu nhanh
-              Row(
+              Wrap(
+                crossAxisAlignment: WrapCrossAlignment.center,
+                spacing: 4,
+                runSpacing: 4,
                 children: [
                   Text('Chọn nhanh: ', style: AppTypography.caption),
                   _buildCoinChip(0, 'Free'),
-                  const SizedBox(width: 4),
                   _buildCoinChip(5, '5 xu'),
-                  const SizedBox(width: 4),
                   _buildCoinChip(10, '10 xu'),
-                  const SizedBox(width: 4),
                   _buildCoinChip(20, '20 xu'),
                 ],
               ),

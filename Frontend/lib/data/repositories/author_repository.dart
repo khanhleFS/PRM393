@@ -8,8 +8,28 @@ import '../models/novel_model.dart';
 class AuthorRepository {
   final ApiClient _client = ApiClient();
 
-  /// Lấy danh sách các bộ truyện do tác giả hiện tại sáng tác
-  Future<List<NovelModel>> getMyNovels() async {
+  /// Lấy danh sách truyện: Admin quản lý tất cả truyện, Tác giả quản lý truyện cá nhân
+  Future<List<NovelModel>> getMyNovels({bool isAdmin = false}) async {
+    if (isAdmin) {
+      try {
+        final response = await _client.dio.get(
+          ApiEndpoints.novels,
+          queryParameters: {'size': 100},
+        );
+        final apiRes = ApiResponse<Map<String, dynamic>>.fromJson(
+          response.data as Map<String, dynamic>,
+          (json) => json as Map<String, dynamic>,
+        );
+
+        if (apiRes.isSuccess && apiRes.result != null) {
+          final page = NovelPageResponseModel.fromJson(apiRes.result!);
+          return page.content;
+        }
+      } catch (_) {
+        // Tiếp tục thử endpoint authorNovels
+      }
+    }
+
     try {
       final response = await _client.dio.get(ApiEndpoints.authorNovels);
       final apiRes = ApiResponse<List<dynamic>>.fromJson(
@@ -24,9 +44,28 @@ class AuthorRepository {
       }
       return [];
     } on DioException catch (e) {
+      // Nếu là Admin hoặc có lỗi 403, dự phòng tải toàn bộ danh sách truyện hệ thống
+      if (isAdmin || e.response?.statusCode == 403) {
+        try {
+          final response = await _client.dio.get(
+            ApiEndpoints.novels,
+            queryParameters: {'size': 100},
+          );
+          final apiRes = ApiResponse<Map<String, dynamic>>.fromJson(
+            response.data as Map<String, dynamic>,
+            (json) => json as Map<String, dynamic>,
+          );
+
+          if (apiRes.isSuccess && apiRes.result != null) {
+            final page = NovelPageResponseModel.fromJson(apiRes.result!);
+            return page.content;
+          }
+        } catch (_) {}
+      }
+
       final msg = e.response?.data?['message'] ??
           e.message ??
-          'Lỗi tải danh sách truyện của tác giả';
+          'Lỗi tải danh sách truyện';
       throw Exception(msg);
     }
   }

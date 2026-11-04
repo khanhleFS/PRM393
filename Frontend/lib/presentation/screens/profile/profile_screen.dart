@@ -181,17 +181,33 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     leading: CircleAvatar(
-                      backgroundColor: AppColors.primary.withValues(alpha: 0.12),
-                      child: const Icon(
-                        Icons.edit_note_rounded,
-                        color: AppColors.primary,
+                      backgroundColor: (isAuth && user!.role.toUpperCase() == 'ADMIN')
+                          ? AppColors.coinGold.withValues(alpha: 0.18)
+                          : AppColors.primary.withValues(alpha: 0.12),
+                      child: Icon(
+                        (isAuth && user!.role.toUpperCase() == 'ADMIN')
+                            ? Icons.admin_panel_settings_rounded
+                            : Icons.auto_stories_rounded,
+                        color: (isAuth && user!.role.toUpperCase() == 'ADMIN')
+                            ? AppColors.coinGold
+                            : AppColors.primary,
                       ),
                     ),
-                    title: const Text(
-                      'Studio Tác giả & Sáng tác',
-                      style: TextStyle(fontWeight: FontWeight.bold),
+                    title: Text(
+                      (isAuth && user!.role.toUpperCase() == 'ADMIN')
+                          ? 'Quản trị truyện & bài viết'
+                          : 'Quản lý truyện & bài viết',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
-                    subtitle: const Text('Viết truyện mới, quản lý tác phẩm & xuất bản chương'),
+                    subtitle: Text(
+                      (isAuth && user!.role.toUpperCase() == 'ADMIN')
+                          ? 'Toàn quyền thêm, sửa, xóa truyện và các chương truyện'
+                          : 'Sáng tác, quản lý danh sách truyện và các chương truyện',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     trailing: const Icon(Icons.chevron_right),
                     onTap: () {
                       Navigator.of(context).push(

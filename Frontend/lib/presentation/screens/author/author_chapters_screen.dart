@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../bloc/auth/auth_bloc.dart';
+import '../../../bloc/auth/auth_state.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_tokens.dart';
 import '../../../data/models/chapter_model.dart';
@@ -127,10 +129,13 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = context.watch<AuthBloc>().state;
+    final isAdmin = authState is Authenticated &&
+        authState.user.role.toUpperCase() == 'ADMIN';
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(widget.novel.title),
+        title: Text(isAdmin ? 'Quản lý chương: ${widget.novel.title}' : widget.novel.title),
         backgroundColor: AppColors.background,
         elevation: AppElevation.none,
         actions: [
@@ -145,7 +150,7 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
         backgroundColor: AppColors.primary,
         foregroundColor: AppColors.surface,
         icon: const Icon(Icons.edit_note_rounded),
-        label: const Text('Viết chương mới'),
+        label: Text(isAdmin ? 'Thêm chương mới (Admin)' : 'Viết chương mới'),
         onPressed: () async {
           final res = await Navigator.of(context).push<bool>(
             MaterialPageRoute(
@@ -187,7 +192,10 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Mục lục tác phẩm', style: AppTypography.h3),
+                        Text(
+                          isAdmin ? 'Mục lục chương (Quản trị Admin)' : 'Mục lục tác phẩm',
+                          style: AppTypography.h3,
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           'Tổng cộng ${_chapters.length} chương đã phát hành',
@@ -304,7 +312,7 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
+          horizontal: AppSpacing.sm,
           vertical: 4,
         ),
         leading: CircleAvatar(
@@ -324,7 +332,10 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
           overflow: TextOverflow.ellipsis,
           style: AppTypography.bodyM.copyWith(fontWeight: FontWeight.w600),
         ),
-        subtitle: Row(
+        subtitle: Wrap(
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: AppSpacing.xs,
+          runSpacing: 2,
           children: [
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
@@ -343,7 +354,7 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
                 ),
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+
             Text(
               '${chapter.viewCount} lượt đọc',
               style: AppTypography.caption,
@@ -355,7 +366,10 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
           children: [
             // Preview / Read
             IconButton(
-              icon: const Icon(Icons.visibility_outlined, size: 20),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.visibility_outlined, size: 18),
               tooltip: 'Đọc thử chương này',
               color: AppColors.primary,
               onPressed: () {
@@ -373,7 +387,10 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
             ),
             // Edit
             IconButton(
-              icon: const Icon(Icons.edit_outlined, size: 20),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.edit_outlined, size: 18),
               tooltip: 'Sửa chương',
               color: AppColors.textDark,
               onPressed: () async {
@@ -392,7 +409,10 @@ class _AuthorChaptersScreenState extends State<AuthorChaptersScreen> {
             ),
             // Delete
             IconButton(
-              icon: const Icon(Icons.delete_outline_rounded, size: 20),
+              visualDensity: VisualDensity.compact,
+              padding: const EdgeInsets.all(4),
+              constraints: const BoxConstraints(),
+              icon: const Icon(Icons.delete_outline_rounded, size: 18),
               tooltip: 'Xóa chương',
               color: AppColors.error,
               onPressed: () => _confirmDeleteChapter(chapter),

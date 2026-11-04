@@ -37,8 +37,12 @@ class _AuthorNovelsScreenState extends State<AuthorNovelsScreen> {
     });
 
     try {
+      final authState = context.read<AuthBloc>().state;
+      final isAdmin = authState is Authenticated &&
+          authState.user.role.toUpperCase() == 'ADMIN';
+
       final repo = context.read<AuthorRepository>();
-      final list = await repo.getMyNovels();
+      final list = await repo.getMyNovels(isAdmin: isAdmin);
       if (mounted) {
         setState(() {
           _novels = list;
@@ -118,205 +122,275 @@ class _AuthorNovelsScreenState extends State<AuthorNovelsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        title: const Text('Studio Tác giả'),
-        backgroundColor: AppColors.background,
-        elevation: AppElevation.none,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Làm mới',
-            onPressed: _loadNovels,
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.primary,
-        foregroundColor: AppColors.surface,
-        icon: const Icon(Icons.add),
-        label: const Text('Tạo truyện mới'),
-        onPressed: () async {
-          final res = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(
-              builder: (_) => const AuthorNovelEditScreen(),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final isAuth = authState is Authenticated;
+        final user = isAuth ? authState.user : null;
+        final isAdmin = isAuth && user!.role.toUpperCase() == 'ADMIN';
+        final isAuthor = isAuth &&
+            (user!.isAuthor ||
+                user.role.toUpperCase() == 'AUTHOR' ||
+                isAdmin);
+
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          appBar: AppBar(
+            title: Text(
+              isAdmin
+                  ? 'Quản trị truyện & bài viết (Admin)'
+                  : 'Quản lý truyện & bài viết',
             ),
-          );
-          if (res == true) {
-            _loadNovels();
-          }
-        },
-      ),
-      body: BlocBuilder<AuthBloc, AuthState>(
-        builder: (context, authState) {
-          if (authState is! Authenticated) {
-            return Center(
-              child: Padding(
-                padding: AppSpacing.paddingLg,
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.lock_outline_rounded,
-                      size: AppIconSize.xl,
-                      color: AppColors.disabled,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Vui lòng đăng nhập tài khoản tác giả để quản lý tác phẩm',
-                      textAlign: TextAlign.center,
-                      style: AppTypography.bodyM.copyWith(color: AppColors.textSecondary),
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        );
-                      },
-                      child: const Text('Đăng nhập ngay'),
-                    ),
-                  ],
-                ),
+            backgroundColor: AppColors.background,
+            elevation: AppElevation.none,
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.refresh),
+                tooltip: 'Làm mới',
+                onPressed: _loadNovels,
               ),
-            );
-          }
-
-          final user = authState.user;
-          final isAuthor = user.isAuthor || user.role.toUpperCase() == 'AUTHOR' || user.role.toUpperCase() == 'ADMIN';
-
-          return RefreshIndicator(
-            color: AppColors.primary,
-            backgroundColor: AppColors.surface,
-            onRefresh: _loadNovels,
-            child: ListView(
-              padding: AppSpacing.paddingMd,
-              children: [
-                if (!isAuthor)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: AppSpacing.md),
-                    padding: AppSpacing.paddingMd,
-                    decoration: BoxDecoration(
-                      color: AppColors.warning.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: AppColors.warning, width: 0.8),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(Icons.info_outline, color: AppColors.warning),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Lưu ý quyền Tác giả',
-                                style: AppTypography.h3.copyWith(fontSize: 14),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Tài khoản của bạn hiện là "${user.role}". Để xuất bản hoặc sửa truyện trên server, bạn có thể đăng nhập tài khoản tác giả demo: author@sba.com / Password123',
-                                style: AppTypography.caption.copyWith(color: AppColors.textDark),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                if (_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.symmetric(vertical: AppSpacing.xl2),
-                    child: Center(
-                      child: CircularProgressIndicator(color: AppColors.primary),
-                    ),
-                  )
-                else if (_errorMessage != null)
-                  Container(
+            ],
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            backgroundColor: AppColors.primary,
+            foregroundColor: AppColors.surface,
+            icon: const Icon(Icons.add),
+            label: Text(isAdmin ? 'Thêm truyện mới (Admin)' : 'Tạo truyện mới'),
+            onPressed: () async {
+              final res = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(
+                  builder: (_) => const AuthorNovelEditScreen(),
+                ),
+              );
+              if (res == true) {
+                _loadNovels();
+              }
+            },
+          ),
+          body: !isAuth
+              ? Center(
+                  child: Padding(
                     padding: AppSpacing.paddingLg,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: AppColors.divider, width: 0.8),
-                    ),
                     child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(
-                          Icons.error_outline_rounded,
-                          size: AppIconSize.lg,
-                          color: AppColors.error,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          _errorMessage!,
-                          textAlign: TextAlign.center,
-                          style: AppTypography.bodyM.copyWith(color: AppColors.textSecondary),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        ElevatedButton(
-                          onPressed: _loadNovels,
-                          child: const Text('Thử lại'),
-                        ),
-                      ],
-                    ),
-                  )
-                else if (_novels.isEmpty)
-                  Container(
-                    padding: AppSpacing.paddingLg,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(color: AppColors.divider, width: 0.8),
-                    ),
-                    child: Column(
-                      children: [
-                        const Icon(
-                          Icons.auto_stories_outlined,
+                          Icons.admin_panel_settings_outlined,
                           size: AppIconSize.xl,
                           color: AppColors.disabled,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         Text(
-                          'Bạn chưa có bộ truyện nào',
-                          style: AppTypography.h3,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Hãy bắt đầu sáng tác và xuất bản tác phẩm đầu tay của bạn ngay hôm nay!',
+                          'Vui lòng đăng nhập tài khoản Quản trị viên (Admin) hoặc Tác giả để quản lý tác phẩm',
                           textAlign: TextAlign.center,
-                          style: AppTypography.bodyM.copyWith(color: AppColors.textSecondary),
+                          style: AppTypography.bodyM
+                              .copyWith(color: AppColors.textSecondary),
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        ElevatedButton.icon(
-                          onPressed: () async {
-                            final res = await Navigator.of(context).push<bool>(
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => const AuthorNovelEditScreen(),
-                              ),
+                                  builder: (_) => const LoginScreen()),
                             );
-                            if (res == true) _loadNovels();
                           },
-                          icon: const Icon(Icons.add),
-                          label: const Text('Sáng tác truyện đầu tay'),
+                          child: const Text('Đăng nhập ngay'),
                         ),
                       ],
                     ),
-                  )
-                else
-                  ..._novels.map((novel) => _buildNovelCard(novel)),
-                const SizedBox(height: 80),
-              ],
-            ),
-          );
-        },
-      ),
+                  ),
+                )
+              : RefreshIndicator(
+                  color: AppColors.primary,
+                  backgroundColor: AppColors.surface,
+                  onRefresh: _loadNovels,
+                  child: ListView(
+                    padding: AppSpacing.paddingMd,
+                    children: [
+                      // Banner Quản trị viên (Admin)
+                      if (isAdmin)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                          padding: AppSpacing.paddingMd,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border: Border.all(
+                              color: AppColors.primary.withValues(alpha: 0.3),
+                              width: 1.0,
+                            ),
+                            boxShadow: AppElevation.shadowCard,
+                          ),
+                          child: Row(
+                            children: [
+                              const CircleAvatar(
+                                backgroundColor: AppColors.primary,
+                                radius: 18,
+                                child: Icon(
+                                  Icons.shield_outlined,
+                                  color: AppColors.surface,
+                                  size: 20,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Chế độ Quản trị viên (Admin)',
+                                      style: AppTypography.h3.copyWith(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Toàn quyền quản trị danh sách tác phẩm, tạo truyện mới và quản lý các chương trong hệ thống.',
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppColors.textSecondary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (!isAuthor)
+                        Container(
+                          margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                          padding: AppSpacing.paddingMd,
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border:
+                                Border.all(color: AppColors.warning, width: 0.8),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.info_outline,
+                                  color: AppColors.warning),
+                              const SizedBox(width: AppSpacing.sm),
+      
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Quyền Quản trị viên / Tác giả',
+                                      style: AppTypography.h3.copyWith(fontSize: 14),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Tài khoản hiện tại của bạn là "${user?.role}". Để chỉnh sửa dữ liệu trên server, hãy đăng nhập tài khoản Quản trị viên (admin@sba.com / Password123) hoặc Tác giả (author@sba.com / Password123).',
+                                      style: AppTypography.caption.copyWith(
+                                        color: AppColors.textDark,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                      if (_isLoading)
+                        const Padding(
+                          padding: EdgeInsets.symmetric(vertical: AppSpacing.xl2),
+                          child: Center(
+                            child:
+                                CircularProgressIndicator(color: AppColors.primary),
+                          ),
+                        )
+                      else if (_errorMessage != null)
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border:
+                                Border.all(color: AppColors.divider, width: 0.8),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.error_outline_rounded,
+                                size: AppIconSize.lg,
+                                color: AppColors.error,
+                              ),
+                              const SizedBox(height: AppSpacing.sm),
+                              Text(
+                                _errorMessage!,
+                                textAlign: TextAlign.center,
+                                style: AppTypography.bodyM.copyWith(
+                                    color: AppColors.textSecondary),
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              ElevatedButton(
+                                onPressed: _loadNovels,
+                                child: const Text('Thử lại'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else if (_novels.isEmpty)
+                        Container(
+                          padding: AppSpacing.paddingLg,
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                            border:
+                                Border.all(color: AppColors.divider, width: 0.8),
+                          ),
+                          child: Column(
+                            children: [
+                              const Icon(
+                                Icons.auto_stories_outlined,
+                                size: AppIconSize.xl,
+                                color: AppColors.disabled,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'Chưa có bộ truyện nào',
+                                style: AppTypography.h3,
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Bắt đầu thêm bộ truyện mới và xuất bản các chương truyện vào hệ thống!',
+                                textAlign: TextAlign.center,
+                                style: AppTypography.bodyM.copyWith(
+                                    color: AppColors.textSecondary),
+                              ),
+                              const SizedBox(height: AppSpacing.lg),
+                              ElevatedButton.icon(
+                                onPressed: () async {
+                                  final res = await Navigator.of(context)
+                                      .push<bool>(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          const AuthorNovelEditScreen(),
+                                    ),
+                                  );
+                                  if (res == true) _loadNovels();
+                                },
+                                icon: const Icon(Icons.add),
+                                label: Text(isAdmin
+                                    ? 'Thêm truyện mới (Admin)'
+                                    : 'Sáng tác truyện đầu tay'),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ..._novels.map((novel) => _buildNovelCard(novel, isAdmin)),
+                      const SizedBox(height: 80),
+                    ],
+                  ),
+                ),
+        );
+      },
     );
   }
 
-  Widget _buildNovelCard(NovelModel novel) {
+  Widget _buildNovelCard(NovelModel novel, bool isAdmin) {
     final isOngoing = novel.status.toUpperCase() == 'ONGOING';
 
     return Container(
@@ -357,7 +431,10 @@ class _AuthorNovelsScreenState extends State<AuthorNovelsScreen> {
                       style: AppTypography.h3.copyWith(fontSize: 16),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    Row(
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: AppSpacing.sm,
+                      runSpacing: 2,
                       children: [
                         Container(
                           padding: const EdgeInsets.symmetric(
@@ -381,7 +458,7 @@ class _AuthorNovelsScreenState extends State<AuthorNovelsScreen> {
                             ),
                           ),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+
                         Text(
                           '${novel.viewCount} lượt xem',
                           style: AppTypography.caption,
@@ -389,7 +466,18 @@ class _AuthorNovelsScreenState extends State<AuthorNovelsScreen> {
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    if (novel.description.isNotEmpty)
+                    if (novel.authorName.isNotEmpty)
+                      Text(
+                        'Tác giả: ${novel.authorName}',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    if (novel.description.isNotEmpty) ...[
+                      const SizedBox(height: 2),
                       Text(
                         novel.description,
                         maxLines: 2,
@@ -399,6 +487,7 @@ class _AuthorNovelsScreenState extends State<AuthorNovelsScreen> {
                           fontSize: 12,
                         ),
                       ),
+                    ],
                   ],
                 ),
               ),
